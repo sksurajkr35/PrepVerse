@@ -68,10 +68,22 @@ PrepVerse/
 
 ## API (backend on :8080)
 
-Auth (`/api/auth/register|login|demo`), profile (`/api/users/me`),
-progress (`/api/problems/solved`, `/api/submissions/mine`, `/api/test-attempts`),
-`GET /api/leaderboard`, `POST /api/compiler/run` (real execution),
-`POST /api/ai-mentor`, `GET /api/health`. Full table in `backend/README.md`.
+Auth (`/api/auth/register|login|demo|refresh|logout`), profile
+(`/api/users/me`), judge (`GET /api/problems[/{id}]`,
+`POST /api/problems/{id}/submit`), progress (`/api/problems/solved`,
+`/api/submissions/mine`, `/api/test-attempts`), content
+(`/api/content/aptitude|mock-tests|companies|core-subjects|interview`),
+personal (`/api/resume`, `/api/study-plan`, `/api/analytics/summary`),
+`GET /api/leaderboard`, `POST /api/compiler/run`, `POST /api/ai-mentor`,
+`GET /api/health`, admin (`/api/admin/*`), Actuator. Full tables in
+`backend/README.md`; interactive docs at `/swagger-ui.html`.
+
+## Docs
+
+- `DEPLOY.md` — production deployment (Compose + split layouts).
+- `docs/PROJECT_REPORT.md` — architecture, schema, security, testing.
+- `docs/VIVA_QA.md` — viva questions with answers.
+- `docs/DEMO_SCRIPT.md` — 5-minute demo walkthrough.
 
 ## Online judge (real judging + admin portal)
 

@@ -53,8 +53,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [solvedProblemIds, setSolvedProblemIds] = useState<string[]>(() => storageService.getSolvedProblemIds());
 
+  const streakDays = user?.streakDays ?? 0;
   const notifications = [
-    '🔥 12 Day Streak achieved! Keep grinding!',
+    streakDays > 0
+      ? `🔥 ${streakDays} Day Streak achieved! Keep grinding!`
+      : '🔥 Solve a problem today to start your streak!',
     '🎯 New Mock Test "TCS NQT National Qualifier" is live.',
     '💡 Amazon updated hiring pattern for 2026 Batch.',
     '🏆 You jumped 2 ranks in College Leaderboard!'
