@@ -18,7 +18,15 @@ jobs:
           java-version: '21'
           cache: maven
       - name: Build + test
-        run: mvn -B -ntp verify
+        run: |
+          set +e
+          mvn -B -ntp verify > build.log 2>&1
+          code=$?
+          echo "--- failing excerpt (also emitted as annotations) ---"
+          grep -E "ERROR|FAILURE|Tests run:|BUILD" build.log | head -40 || true
+          grep -E "\[ERROR\]" build.log | head -25 | sed 's/%/%25/g' | while IFS= read -r line; do echo "::error::${line:0:600}"; done
+          echo "mvn exit code: $code"
+          exit $code
         working-directory: backend
 
   frontend:
