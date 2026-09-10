@@ -24,9 +24,33 @@ class JwtUtilTest {
     @Test
     void tamperedTokenIsInvalid() {
         String token = jwt.generateToken("u1", "a@b.com");
+        String[] parts = token.split("\\.");
+        assertEquals(3, parts.length);
 
-        assertFalse(jwt.isValid(token + "x"));
+        // flip the last char of the signature (same length, breaks HMAC)
+        String sig = parts[2];
+        char flipped = sig.charAt(sig.length() - 1) == 'a' ? 'b' : 'a';
+        String badSig = parts[0] + "." + parts[1] + "."
+            + sig.substring(0, sig.length() - 1) + flipped;
+        assertFalse(jwt.isValid(badSig));
+
+        // flip a char in the payload (breaks HMAC over content)
+        String payload = parts[1];
+        char flippedP = payload.charAt(0) == 'a' ? 'b' : 'a';
+        String badPayload = parts[0] + "." + flippedP + payload.substring(1) + "." + parts[2];
+        assertFalse(jwt.isValid(badPayload));
+
         assertFalse(jwt.isValid("not-a-token"));
+    }
+
+    @Test
+    void tokenSignedWithDifferentKeyIsInvalid() {
+        JwtUtil other = new JwtUtil(
+            "a-different-secret-key-that-is-also-long-enough!!", 60_000);
+        String token = jwt.generateToken("u1", "a@b.com");
+
+        assertFalse(other.isValid(token));
+        assertFalse(jwt.isValid(other.generateToken("u1", "a@b.com")));
     }
 
     @Test
