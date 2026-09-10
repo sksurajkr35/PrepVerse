@@ -195,3 +195,15 @@ wipe local (offline demo) sessions.
 Streaks are computed from `user_activity` (one row per active day,
 written on Accepted submissions and mock attempts). `PUT /api/users/me`
 also accepts `theme: "dark" | "light"`.
+
+## Actuator & logging
+
+| Endpoint | Auth | Notes |
+|----------|------|-------|
+| `/actuator/health`, `/actuator/info` | public | Liveness + app info (health details need a JWT) |
+| `/actuator/metrics` | ROLE_ADMIN | JVM, HTTP, Hikari gauges |
+| `/actuator/httpexchanges` | ROLE_ADMIN | Last 100 requests/responses |
+
+Logs go to stdout and `logs/prepverse.log` (daily rotation, 14 days,
+500 MB cap; override dir with `LOG_DIR`). Production profile
+(`-Dspring.profiles.active=prod`) quiets framework logs to WARN.
