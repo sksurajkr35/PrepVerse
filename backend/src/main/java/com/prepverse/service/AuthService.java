@@ -15,18 +15,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-/** Registration, login and demo-login. Passwords are BCrypt-hashed in MySQL. */
+/**
+ * Registration, login and demo-login. Passwords are BCrypt-hashed in MySQL.
+ * Every session returns a short-lived access JWT + a rotating refresh token.
+ */
 @Service
 public class AuthService {
 
     private final UserRepository users;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final RefreshTokenService refreshTokens;
 
-    public AuthService(UserRepository users, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public AuthService(UserRepository users, PasswordEncoder passwordEncoder,
+            JwtUtil jwtUtil, RefreshTokenService refreshTokens) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.refreshTokens = refreshTokens;
     }
 
     @Transactional
@@ -52,7 +58,7 @@ public class AuthService {
         return toAuthResponse(u);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest req) {
         User u = users.findByEmail(req.email().toLowerCase().trim())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
@@ -91,8 +97,30 @@ public class AuthService {
         return toAuthResponse(u);
     }
 
+    /** Exchanges a valid refresh token for a fresh access + refresh pair. */
+    @Transactional
+    public AuthResponse refresh(String rawToken) {
+        RefreshTokenService.Rotation r = refreshTokens.rotate(rawToken)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED, "Session expired - please log in again"));
+        User u = users.findById(r.userId())
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED, "Account no longer exists"));
+        return new AuthResponse(
+            jwtUtil.generateToken(u.getId(), u.getEmail()), r.refreshToken(), UserDto.fromEntity(u));
+    }
+
+    /** Logs out everywhere by revoking all refresh tokens of the user. */
+    @Transactional
+    public void logout(String userId) {
+        refreshTokens.revokeAll(userId);
+    }
+
     private AuthResponse toAuthResponse(User u) {
-        return new AuthResponse(jwtUtil.generateToken(u.getId(), u.getEmail()), UserDto.fromEntity(u));
+        return new AuthResponse(
+            jwtUtil.generateToken(u.getId(), u.getEmail()),
+            refreshTokens.issue(u.getId()),
+            UserDto.fromEntity(u));
     }
 
     private static String orEmpty(String s) {

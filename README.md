@@ -73,7 +73,7 @@ progress (`/api/problems/solved`, `/api/submissions/mine`, `/api/test-attempts`)
 
 ## Online judge (real judging + admin portal)
 
-- `GET /api/problems` — 50-problem bank from MySQL (public);
+- `GET /api/problems` — 50-problem bank from MySQL (JWT);
   `GET /api/problems/{id}` — one problem (never includes hidden cases).
 - `POST /api/problems/{id}/submit` (JWT, 10/min) — runs the code against
   **every** test case via Piston and returns an honest verdict: `Accepted`,

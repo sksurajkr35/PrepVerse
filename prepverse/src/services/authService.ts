@@ -1,12 +1,13 @@
 import { User } from '../types';
 import { currentUserMock } from '../data/mockData';
-import { apiFetch, getToken, setToken, isNetworkError } from './api';
+import { apiFetch, getToken, setToken, setRefreshToken, isNetworkError } from './api';
 import { storageService } from './storageService';
 
 const AUTH_STORAGE_KEY = 'prepverse_auth_user';
 
 interface AuthResponse {
   token: string;
+  refreshToken?: string;
   user: User;
 }
 
@@ -16,6 +17,13 @@ function cacheUser(user: User): void {
   } catch {
     // ignore
   }
+}
+
+/** Persists a fresh session pair (access + rotating refresh token). */
+function storeSession(data: AuthResponse): void {
+  setToken(data.token);
+  setRefreshToken(data.refreshToken ?? null);
+  cacheUser(data.user);
 }
 
 /** Fields the Java backend accepts on PUT /api/users/me. */
@@ -54,7 +62,7 @@ export const authService = {
     return this.getCurrentUser() !== null;
   },
 
-  /** Email + password login against the Java backend (JWT). */
+  /** Email + password login against the Java backend (JWT + refresh token). */
   async login(email: string, password?: string): Promise<User> {
     try {
       const data = await apiFetch<AuthResponse>('/api/auth/login', {
@@ -62,8 +70,7 @@ export const authService = {
         auth: false,
         body: JSON.stringify({ email, password: password ?? '' })
       });
-      setToken(data.token);
-      cacheUser(data.user);
+      storeSession(data);
       await storageService.syncAllFromServer().catch(() => {});
       return data.user;
     } catch (err) {
@@ -75,6 +82,7 @@ export const authService = {
           name: email.split('@')[0] || 'Surya Rastogi'
         };
         setToken(null);
+        setRefreshToken(null);
         cacheUser(user);
         return user;
       }
@@ -99,8 +107,7 @@ export const authService = {
         auth: false,
         body: JSON.stringify(signupData)
       });
-      setToken(data.token);
-      cacheUser(data.user);
+      storeSession(data);
       await storageService.syncAllFromServer().catch(() => {});
       return data.user;
     } catch (err) {
@@ -118,6 +125,7 @@ export const authService = {
           preferredLanguage: signupData.preferredLanguage
         };
         setToken(null);
+        setRefreshToken(null);
         cacheUser(user);
         return user;
       }
@@ -132,14 +140,14 @@ export const authService = {
         method: 'POST',
         auth: false
       });
-      setToken(data.token);
-      cacheUser(data.user);
+      storeSession(data);
       await storageService.syncAllFromServer().catch(() => {});
       return data.user;
     } catch (err) {
       if (isNetworkError(err)) {
         const demoUser = { ...currentUserMock };
         setToken(null);
+        setRefreshToken(null);
         cacheUser(demoUser);
         return demoUser;
       }
@@ -190,12 +198,17 @@ export const authService = {
     }
   },
 
+  /** Revokes the server session (best-effort) and clears local auth state. */
   logout(): void {
+    if (getToken()) {
+      apiFetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    }
     try {
       localStorage.removeItem(AUTH_STORAGE_KEY);
     } catch {
       // ignore
     }
     setToken(null);
+    setRefreshToken(null);
   }
 };

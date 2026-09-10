@@ -113,3 +113,14 @@ CREATE TABLE IF NOT EXISTS test_cases (
   INDEX idx_case_problem (problem_id),
   CONSTRAINT fk_case_problem FOREIGN KEY (problem_id) REFERENCES problems (id)
 );
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id          VARCHAR(255) NOT NULL PRIMARY KEY,
+  user_id     VARCHAR(255) NOT NULL,
+  token_hash  VARCHAR(64)  NOT NULL UNIQUE,
+  expires_at  DATETIME     NOT NULL,
+  revoked     TINYINT(1)   NOT NULL DEFAULT 0,
+  created_at  DATETIME,
+  INDEX idx_rt_user (user_id),
+  CONSTRAINT fk_rt_user FOREIGN KEY (user_id) REFERENCES users (id)
+);

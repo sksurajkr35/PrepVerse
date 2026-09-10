@@ -155,8 +155,8 @@ backend/
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| GET | `/api/problems` | public | Full bank (ordered, no hidden cases) |
-| GET | `/api/problems/{id}` | public | One problem (no hidden cases) |
+| GET | `/api/problems` | JWT | Full bank (ordered, no hidden cases) |
+| GET | `/api/problems/{id}` | JWT | One problem (no hidden cases) |
 | POST | `/api/problems/{id}/submit` | JWT, 10/min | Judged submit; verdicts: Accepted, Wrong Answer, Time Limit Exceeded, Compilation Error, Runtime Error, Judge Error |
 | GET | `/api/admin/stats` | ROLE_ADMIN | Users/problems/submissions/attempts counts |
 | GET | `/api/admin/users` | ROLE_ADMIN | All students |
@@ -168,3 +168,18 @@ Output comparison is lenient: CRLF normalized, per-line trailing
 whitespace and edge blank lines ignored. Seeded bank: 10 curated +
 40 generated = 50 problems with visible + hidden cases (`ProblemSeeder`,
 runs once when the `problems` table is empty).
+
+## Session & refresh tokens
+
+Access JWTs live 15 minutes (`app.jwt.expiration-ms`). Every login /
+register / demo response also carries an opaque, single-use refresh
+token (30 days, SHA-256 hash stored in `refresh_tokens`).
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| POST | `/api/auth/refresh` | refresh body | Rotates the pair; reuse of a revoked token wipes the whole family (theft protection) |
+| POST | `/api/auth/logout` | JWT | Revokes all refresh tokens of the user |
+
+The React client retries once after a silent refresh on 401 and only
+bounces to login when the session is truly dead. No-token 401s never
+wipe local (offline demo) sessions.
