@@ -32,6 +32,10 @@ public class Submission {
     @Column(columnDefinition = "TEXT")
     private String code;
 
+    /** Judge summary / failure detail (e.g. which case failed). */
+    @Column(columnDefinition = "TEXT")
+    private String output;
+
     private LocalDateTime submittedAt;
 
     @PrePersist
@@ -67,6 +71,9 @@ public class Submission {
 
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
+
+    public String getOutput() { return output; }
+    public void setOutput(String output) { this.output = output; }
 
     public LocalDateTime getSubmittedAt() { return submittedAt; }
     public void setSubmittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; }

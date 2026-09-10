@@ -7,6 +7,7 @@ import com.prepverse.security.RateLimitFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -20,9 +21,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * everything else (including AI mentor + compiler, which cost quota/money)
  * requires a valid "Authorization: Bearer &lt;jwt&gt;" header.
  * RateLimitFilter additionally throttles brute-force and quota abuse.
+ * Method security (@PreAuthorize) guards the /api/admin/** controllers.
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;

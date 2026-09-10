@@ -19,6 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *   <li>/api/auth/** - 10 req/min per IP (login brute-force protection)</li>
  *   <li>/api/ai-mentor - 20 req/min per user (Gemini quota protection)</li>
  *   <li>/api/compiler/** - 30 req/min per user (Piston abuse protection)</li>
+ *   <li>/api/problems/*/submit - 10 req/min per user (judging runs many Piston calls)</li>
  * </ul>
  * Excess requests get HTTP 429 + Retry-After header.
  *
@@ -32,6 +33,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static final int AUTH_LIMIT_PER_MIN = 10;
     private static final int AI_LIMIT_PER_MIN = 20;
     private static final int COMPILER_LIMIT_PER_MIN = 30;
+    private static final int SUBMIT_LIMIT_PER_MIN = 10;
     private static final long WINDOW_MS = 60_000L;
 
     /** One sliding window per "scope:key" (e.g. "ai:usr_abc123"). */
@@ -61,6 +63,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         } else if (path.startsWith("/api/compiler/")) {
             scope = "compiler:" + userOrIp(request);
             limit = COMPILER_LIMIT_PER_MIN;
+        } else if (path.startsWith("/api/problems/") && path.endsWith("/submit")) {
+            scope = "submit:" + userOrIp(request);
+            limit = SUBMIT_LIMIT_PER_MIN;
         } else {
             chain.doFilter(request, response);
             return;

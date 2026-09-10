@@ -150,3 +150,21 @@ backend/
 | `JWT_SECRET`                     | dev secret                     | JWT signing key (min 32 chars) |
 | `CORS_ALLOWED_ORIGINS`           | `*`                            | Comma-separated allowed origins|
 | `app.piston.base-url`            | `https://emkc.org/api/v2/piston` | Code execution API           |
+
+## Online judge & admin API
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET | `/api/problems` | public | Full bank (ordered, no hidden cases) |
+| GET | `/api/problems/{id}` | public | One problem (no hidden cases) |
+| POST | `/api/problems/{id}/submit` | JWT, 10/min | Judged submit; verdicts: Accepted, Wrong Answer, Time Limit Exceeded, Compilation Error, Runtime Error, Judge Error |
+| GET | `/api/admin/stats` | ROLE_ADMIN | Users/problems/submissions/attempts counts |
+| GET | `/api/admin/users` | ROLE_ADMIN | All students |
+| PUT | `/api/admin/users/{id}/role` | ROLE_ADMIN | `{"role":"student"\|"admin"}` (no self-demote) |
+| GET/POST | `/api/admin/problems` | ROLE_ADMIN | List / create (with test cases) |
+| GET/PUT/DELETE | `/api/admin/problems/{id}` | ROLE_ADMIN | Detail (with cases) / replace / delete |
+
+Output comparison is lenient: CRLF normalized, per-line trailing
+whitespace and edge blank lines ignored. Seeded bank: 10 curated +
+40 generated = 50 problems with visible + hidden cases (`ProblemSeeder`,
+runs once when the `problems` table is empty).

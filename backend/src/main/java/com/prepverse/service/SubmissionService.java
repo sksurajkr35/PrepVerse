@@ -41,6 +41,7 @@ public class SubmissionService {
         s.setStatus(req.status() == null || req.status().isBlank() ? "Accepted" : req.status());
         s.setRuntime(req.runtime() == null ? "N/A" : req.runtime());
         s.setMemory(req.memory() == null ? "N/A" : req.memory());
+        s.setOutput(req.output() == null ? "" : req.output());
         submissions.save(s);
 
         if ("Accepted".equalsIgnoreCase(s.getStatus())) {

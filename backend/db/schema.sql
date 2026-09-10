@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS submissions (
   runtime       VARCHAR(255),
   memory        VARCHAR(255),
   code          TEXT,
+  output        TEXT,
   submitted_at  DATETIME,
   INDEX idx_sub_user (user_id),
   CONSTRAINT fk_sub_user FOREIGN KEY (user_id) REFERENCES users (id)
@@ -80,4 +81,35 @@ CREATE TABLE IF NOT EXISTS test_attempt_topics (
   topic_score  INT,
   PRIMARY KEY (attempt_id, topic),
   CONSTRAINT fk_topic_attempt FOREIGN KEY (attempt_id) REFERENCES test_attempts (id)
+);
+
+CREATE TABLE IF NOT EXISTS problems (
+  id                      VARCHAR(255) NOT NULL PRIMARY KEY,
+  title                   VARCHAR(255) NOT NULL,
+  difficulty              VARCHAR(255) NOT NULL,
+  acceptance_rate         DOUBLE       NOT NULL DEFAULT 0,
+  topic                   VARCHAR(255),
+  companies               TEXT,
+  status                  VARCHAR(255) NOT NULL DEFAULT 'Unsolved',
+  description             TEXT,
+  examples                TEXT,
+  constraints             TEXT,
+  hints                   TEXT,
+  expected_time_complexity VARCHAR(255),
+  expected_space_complexity VARCHAR(255),
+  starter_code            TEXT,
+  display_order           INT          NOT NULL DEFAULT 0,
+  created_at              DATETIME,
+  updated_at              DATETIME
+);
+
+CREATE TABLE IF NOT EXISTS test_cases (
+  id              BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  problem_id      VARCHAR(255) NOT NULL,
+  input           TEXT,
+  expected_output TEXT,
+  hidden          TINYINT(1)   NOT NULL DEFAULT 0,
+  position        INT          NOT NULL DEFAULT 0,
+  INDEX idx_case_problem (problem_id),
+  CONSTRAINT fk_case_problem FOREIGN KEY (problem_id) REFERENCES problems (id)
 );

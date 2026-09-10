@@ -46,6 +46,11 @@ export const storageService = {
     return readCache<string[]>(SOLVED_PROBLEMS_KEY, DEFAULT_SOLVED);
   },
 
+  /** Replaces the whole solved-ids cache (used after a judged online submit). */
+  replaceSolvedCache(ids: string[]): void {
+    writeCache(SOLVED_PROBLEMS_KEY, Array.from(new Set(ids)));
+  },
+
   markProblemSolved(problemId: string, code: string, language: string): void {
     // 1) Optimistic local update (sync - UI reads this immediately)
     const solved = new Set(this.getSolvedProblemIds());
@@ -116,7 +121,11 @@ export const storageService = {
     return readCache<TestAttemptResult[]>(TEST_ATTEMPTS_KEY, []);
   },
 
-  /** Pull solved ids + submissions + attempts from MySQL into the local cache. */
+  /**
+   * Pulls solved ids + submissions + attempts from MySQL into the local cache.
+   * Solved ids are UNION-merged so offline solves are never lost; local-only
+   * solves are pushed back to the server.
+   */
   async syncAllFromServer(): Promise<void> {
     if (!getToken()) {
       return;
@@ -129,7 +138,18 @@ export const storageService = {
       apiFetch<any[]>('/api/test-attempts').catch(() => null)
     ]);
     if (solved) {
-      writeCache(SOLVED_PROBLEMS_KEY, solved);
+      const serverSet = new Set(solved);
+      const local = this.getSolvedProblemIds();
+      const merged = Array.from(new Set([...serverSet, ...local]));
+      writeCache(SOLVED_PROBLEMS_KEY, merged);
+      // Push local-only solves up so nothing is lost
+      const missing = local.filter(id => !serverSet.has(id));
+      for (const id of missing) {
+        apiFetch('/api/problems/solved', {
+          method: 'POST',
+          body: JSON.stringify({ problemId: id, language: '', code: '' })
+        }).catch(() => {});
+      }
     }
     if (subs) {
       const mapped: Submission[] = subs.map(s => ({
@@ -137,13 +157,14 @@ export const storageService = {
         problemId: String(s.problemId ?? ''),
         problemTitle: String(s.problemTitle ?? ''),
         language: String(s.language ?? ''),
-        status: (['Accepted', 'Wrong Answer', 'Time Limit Exceeded', 'Compilation Error'] as string[]).includes(s.status)
+        status: (['Accepted', 'Wrong Answer', 'Time Limit Exceeded', 'Compilation Error', 'Runtime Error'] as string[]).includes(s.status)
           ? s.status
-          : 'Accepted',
+          : 'Wrong Answer',
         runtime: String(s.runtime ?? 'N/A'),
         memory: String(s.memory ?? 'N/A'),
         submittedAt: String(s.submittedAt ?? ''),
-        code: String(s.code ?? '')
+        code: String(s.code ?? ''),
+        output: String(s.output ?? '')
       }));
       writeCache(SUBMISSIONS_KEY, mapped);
     }

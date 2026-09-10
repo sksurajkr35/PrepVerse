@@ -14,5 +14,6 @@ public record SubmissionRequest(
     String code,
     String status,
     String runtime,
-    String memory
+    String memory,
+    String output
 ) {}

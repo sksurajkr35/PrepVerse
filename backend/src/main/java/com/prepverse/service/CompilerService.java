@@ -14,6 +14,9 @@ import org.springframework.web.client.RestClient;
 /**
  * REAL code execution via the free Piston API (no key needed).
  * Falls back to a mock simulation if Piston is unreachable.
+ *
+ * <p>{@link #execute} is also used by the judging engine to run
+ * submissions against hidden test cases.
  */
 @Service
 public class CompilerService {
@@ -47,60 +50,116 @@ public class CompilerService {
         Map.entry("r", "r")
     );
 
+    /** True when the judge knows how to run this language id. */
+    public static boolean isSupportedLanguage(String language) {
+        return language != null && LANGUAGES.containsKey(language.toLowerCase().trim());
+    }
+
+    /**
+     * Structured result of one Piston execution.
+     *
+     * @param stdout       program stdout
+     * @param stderr       program stderr
+     * @param exitCode     process exit code (null when killed - treat as TLE)
+     * @param signal       kill signal if any (e.g. SIGKILL on timeout)
+     * @param compileError true when compilation failed
+     * @param compileOutput compiler stdout/stderr when compilation failed
+     */
+    public record Execution(
+        String stdout,
+        String stderr,
+        Integer exitCode,
+        String signal,
+        boolean compileError,
+        String compileOutput
+    ) {}
+
     public CompilerService(RestClient restClient,
                            @Value("${app.piston.base-url}") String pistonBaseUrl) {
         this.restClient = restClient;
         this.pistonBaseUrl = pistonBaseUrl;
     }
 
+    /**
+     * Executes code once via Piston and returns the structured result.
+     * Throws RuntimeException when Piston itself is unreachable or errors.
+     */
     @SuppressWarnings("unchecked")
+    public Execution execute(String language, String code, String stdin, int runTimeoutSec) {
+        String pistonLang = LANGUAGES.getOrDefault(
+            language == null ? "" : language.toLowerCase().trim(), language);
+        Map<String, Object> body = Map.of(
+            "language", pistonLang,
+            "version", "*",
+            "files", List.of(Map.of("content", code == null ? "" : code)),
+            "stdin", stdin == null ? "" : stdin,
+            "run_timeout", runTimeoutSec * 1000,
+            "compile_timeout", 10000
+        );
+
+        Map<String, Object> res = restClient.post()
+            .uri(pistonBaseUrl + "/execute")
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(body)
+            .retrieve()
+            .body(Map.class);
+
+        if (res == null) {
+            throw new IllegalStateException("Empty judge response");
+        }
+
+        Map<String, Object> compile = (Map<String, Object>) res.get("compile");
+        if (compile != null && num(compile.get("code")) != 0) {
+            return new Execution("", "",
+                num(compile.get("code")),
+                str(compile.get("signal")),
+                true,
+                nonEmpty(str(compile.get("stderr")), str(compile.get("output")), "Compilation failed"));
+        }
+
+        Map<String, Object> run = (Map<String, Object>) res.get("run");
+        if (run == null) {
+            throw new IllegalStateException("Empty judge response");
+        }
+        return new Execution(
+            str(run.get("stdout")),
+            str(run.get("stderr")),
+            intOrNull(run.get("code")),
+            str(run.get("signal")),
+            false,
+            ""
+        );
+    }
+
+    /** Default 10s run timeout (interactive "Run Code" endpoint). */
+    public Execution execute(String language, String code, String stdin) {
+        return execute(language, code, stdin, 10);
+    }
+
     public RunCodeResponse run(RunCodeRequest req) {
         long started = System.currentTimeMillis();
         try {
-            String language = LANGUAGES.getOrDefault(req.language().toLowerCase().trim(), req.language());
-            Map<String, Object> body = Map.of(
-                "language", language,
-                "version", "*",
-                "files", List.of(Map.of("content", req.code())),
-                "stdin", req.customInput() == null ? "" : req.customInput(),
-                "run_timeout", 10000,
-                "compile_timeout", 10000
-            );
-
-            Map<String, Object> res = restClient.post()
-                .uri(pistonBaseUrl + "/execute")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(body)
-                .retrieve()
-                .body(Map.class);
-
+            Execution e = execute(req.language(), req.code(), req.customInput());
             long elapsed = System.currentTimeMillis() - started;
-            if (res == null) {
-                return mockFallback(req);
-            }
 
-            Map<String, Object> compile = (Map<String, Object>) res.get("compile");
-            if (compile != null && num(compile.get("code")) != 0) {
+            if (e.compileError()) {
                 return new RunCodeResponse("Compilation Error",
-                    nonEmpty(str(compile.get("stderr")), str(compile.get("output")), "Compilation failed"),
-                    elapsed + " ms", "N/A", 0, 1);
+                    e.compileOutput(), elapsed + " ms", "N/A", 0, 1);
             }
-
-            Map<String, Object> run = (Map<String, Object>) res.get("run");
-            if (run == null) {
-                return mockFallback(req);
+            if (e.exitCode() == null) {
+                return new RunCodeResponse("Time Limit Exceeded",
+                    nonEmpty(e.stderr(), "Program exceeded the time limit."),
+                    elapsed + " ms", "N/A (sandbox)", 0, 1);
             }
-            String stdout = str(run.get("stdout"));
-            String stderr = str(run.get("stderr"));
-            int code = num(run.get("code"));
-            if (code == 0) {
-                String output = stdout.isEmpty() ? "(no output)" : stdout;
-                if (!stderr.isEmpty()) {
-                    output += "\n[stderr]\n" + stderr;
+            if (e.exitCode() == 0) {
+                String output = e.stdout().isEmpty() ? "(no output)" : e.stdout();
+                if (!e.stderr().isEmpty()) {
+                    output += "\n[stderr]\n" + e.stderr();
                 }
                 return new RunCodeResponse("Accepted", output, elapsed + " ms", "N/A (sandbox)", 1, 1);
             }
-            String output = nonEmpty(stderr, stdout, "Program exited with code " + code);
+            String output = nonEmpty(e.stderr(), e.stdout(),
+                "Program exited with code " + e.exitCode());
             return new RunCodeResponse("Wrong Answer", output, elapsed + " ms", "N/A (sandbox)", 0, 1);
 
         } catch (Exception e) {
@@ -134,6 +193,20 @@ public class CompilerService {
             return Integer.parseInt(String.valueOf(o));
         } catch (Exception e) {
             return -1;
+        }
+    }
+
+    private static Integer intOrNull(Object o) {
+        if (o == null) {
+            return null;
+        }
+        if (o instanceof Number n) {
+            return n.intValue();
+        }
+        try {
+            return Integer.parseInt(String.valueOf(o));
+        } catch (Exception e) {
+            return null;
         }
     }
 

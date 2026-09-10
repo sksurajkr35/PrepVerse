@@ -12,7 +12,8 @@ public record SubmissionDto(
     String runtime,
     String memory,
     String submittedAt,
-    String code
+    String code,
+    String output
 ) {
 
     private static final DateTimeFormatter FORMAT =
@@ -28,7 +29,8 @@ public record SubmissionDto(
             s.getRuntime(),
             s.getMemory(),
             s.getSubmittedAt() == null ? "" : s.getSubmittedAt().format(FORMAT),
-            s.getCode()
+            s.getCode(),
+            s.getOutput() == null ? "" : s.getOutput()
         );
     }
 }

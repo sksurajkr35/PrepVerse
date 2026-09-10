@@ -58,6 +58,11 @@ public class DataSeeder implements CommandLineRunner {
         users.save(base("usr_l5", "Vikram Singh", "vikram@nsut.ac.in", "password123",
             "NSUT", 738, 73, 1275, 122, 15, 10, 4200, 13));
 
+        User admin = base("usr_admin", "PrepVerse Admin", "admin@prepverse.com", "admin123",
+            "PrepVerse HQ", 1000, 100, 2500, 50, 30, 90, 9999, 25);
+        admin.setRole("admin");
+        users.save(admin);
+
         log.info("Seeded {} users. Demo login: demo@prepverse.com / demo1234", users.count());
     }
 

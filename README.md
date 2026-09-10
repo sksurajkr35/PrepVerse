@@ -70,3 +70,19 @@ Auth (`/api/auth/register|login|demo`), profile (`/api/users/me`),
 progress (`/api/problems/solved`, `/api/submissions/mine`, `/api/test-attempts`),
 `GET /api/leaderboard`, `POST /api/compiler/run` (real execution),
 `POST /api/ai-mentor`, `GET /api/health`. Full table in `backend/README.md`.
+
+## Online judge (real judging + admin portal)
+
+- `GET /api/problems` — 50-problem bank from MySQL (public);
+  `GET /api/problems/{id}` — one problem (never includes hidden cases).
+- `POST /api/problems/{id}/submit` (JWT, 10/min) — runs the code against
+  **every** test case via Piston and returns an honest verdict: `Accepted`,
+  `Wrong Answer`, `Time Limit Exceeded`, `Compilation Error`,
+  `Runtime Error`, or `Judge Error` (judge down — nothing is saved/scored).
+  On `Accepted` the server saves the submission, marks the problem solved,
+  and bumps score/XP.
+- Hidden test case input/output is never sent to the browser — on failure
+  you only see which case number failed (plus input/expected for visible cases).
+- Admin portal (`ROLE_ADMIN` only): platform stats, student list with role
+  management, and full problem CRUD with test-case editing.
+- Seeded admin login: `admin@prepverse.com / admin123` (change in production).
