@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Brain,
   CheckCircle2,
@@ -10,10 +10,17 @@ import {
   Trophy,
   BarChart3
 } from 'lucide-react';
-import { mockAptitudeQuestions } from '../data/mockData';
+import { mockAptitudeQuestions as mockAptitudeFallback } from '../data/mockData';
+import { contentService } from '../services/contentService';
 import { AptitudeQuestion } from '../types';
 
 export const AptitudePage: React.FC = () => {
+  // Bundled bank paints instantly; live MySQL rows replace it when the backend is up.
+  const [mockAptitudeQuestions, setBank] = useState(mockAptitudeFallback);
+  useEffect(() => {
+    contentService.getAptitude().then(setBank).catch(() => {});
+  }, []);
+
   const [activeCategory, setActiveCategory] = useState<'Quantitative' | 'Logical' | 'Verbal'>('Quantitative');
   const [selectedTopic, setSelectedTopic] = useState<string>('All');
   

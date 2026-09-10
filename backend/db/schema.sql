@@ -124,3 +124,69 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   INDEX idx_rt_user (user_id),
   CONSTRAINT fk_rt_user FOREIGN KEY (user_id) REFERENCES users (id)
 );
+
+CREATE TABLE IF NOT EXISTS aptitude_questions (
+  id                    VARCHAR(255) NOT NULL PRIMARY KEY,
+  category              VARCHAR(255) NOT NULL,
+  topic                 VARCHAR(255) NOT NULL,
+  question              TEXT         NOT NULL,
+  options               TEXT         NOT NULL,
+  correct_answer_index  INT          NOT NULL,
+  explanation           TEXT,
+  position              INT          NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS mock_tests (
+  id                VARCHAR(255) NOT NULL PRIMARY KEY,
+  title             VARCHAR(255) NOT NULL,
+  type              VARCHAR(255) NOT NULL,
+  questions_count   INT          NOT NULL,
+  duration_minutes  INT          NOT NULL,
+  difficulty        VARCHAR(255) NOT NULL,
+  best_score        INT,
+  total_marks       INT          NOT NULL,
+  company_name      VARCHAR(255),
+  description       TEXT,
+  questions         TEXT         NOT NULL,
+  position          INT          NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS companies (
+  id                  VARCHAR(255) NOT NULL PRIMARY KEY,
+  name                VARCHAR(255) NOT NULL,
+  logo_url            VARCHAR(255),
+  tier                VARCHAR(255) NOT NULL,
+  average_package     VARCHAR(255),
+  overview            TEXT,
+  hiring_process      TEXT         NOT NULL,
+  exam_pattern        TEXT         NOT NULL,
+  important_topics    TEXT         NOT NULL,
+  technical_questions TEXT         NOT NULL,
+  hr_questions        TEXT         NOT NULL,
+  roles_hiring        TEXT         NOT NULL,
+  position            INT          NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS core_subjects (
+  id                  VARCHAR(255) NOT NULL PRIMARY KEY,
+  name                VARCHAR(255) NOT NULL,
+  short_name          VARCHAR(255) NOT NULL,
+  icon_name           VARCHAR(255) NOT NULL,
+  progress_percent    INT          NOT NULL DEFAULT 0,
+  description         TEXT,
+  topics              TEXT         NOT NULL,
+  mcqs                TEXT         NOT NULL,
+  interview_questions TEXT         NOT NULL,
+  position            INT          NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS interview_questions (
+  id              VARCHAR(255) NOT NULL PRIMARY KEY,
+  category        VARCHAR(255) NOT NULL,
+  subject_or_role VARCHAR(255) NOT NULL,
+  question        TEXT         NOT NULL,
+  sample_answer   TEXT,
+  tips            TEXT         NOT NULL,
+  difficulty      VARCHAR(255) NOT NULL,
+  position        INT          NOT NULL DEFAULT 0
+);

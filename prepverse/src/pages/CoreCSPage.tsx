@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BookOpen,
   Database,
@@ -13,10 +13,17 @@ import {
   X
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { mockCoreCSSubjects } from '../data/mockData';
+import { mockCoreCSSubjects as mockCoreCSFallback } from '../data/mockData';
+import { contentService } from '../services/contentService';
 import { CoreCSSubject } from '../types';
 
 export const CoreCSPage: React.FC = () => {
+  // Bundled bank paints instantly; live MySQL rows replace it when the backend is up.
+  const [mockCoreCSSubjects, setBank] = useState(mockCoreCSFallback);
+  useEffect(() => {
+    contentService.getCoreSubjects().then(setBank).catch(() => {});
+  }, []);
+
   const { activeSubjectId, openSubjectDetail } = useApp();
   const [activeTab, setActiveTab] = useState<'notes' | 'mcqs' | 'interview'>('notes');
   const [selectedNote, setSelectedNote] = useState<any | null>(null);
