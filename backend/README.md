@@ -1,7 +1,7 @@
 # PrepVerse Backend (Java + Spring Boot + MySQL)
 
 REST API for PrepVerse — placement preparation platform.
-**Java 17 · Spring Boot 3 · Spring Security (JWT) · Spring Data JPA · MySQL 8 · Maven**
+**Java 21 · Spring Boot 3 · Spring Security (JWT) · Spring Data JPA · MySQL 8 · Maven**
 
 ## Quick start
 
@@ -16,7 +16,7 @@ Backend → http://localhost:8080 · MySQL → localhost:3306 (user `root`, pass
 
 ### Option B — Manual
 
-Prerequisites: **JDK 17+**, **Maven 3.8+**, **MySQL 8** running locally.
+Prerequisites: **JDK 21+**, **Maven 3.8+**, **MySQL 8** running locally.
 
 ```bash
 cd backend
@@ -85,6 +85,9 @@ curl -X POST localhost:8080/api/compiler/run \
 
 ## How it works
 
+- **Java 21 + records** — DTOs are Java records; request handling runs on
+  **virtual threads** (`spring.threads.virtual.enabled=true`), so blocking
+  Piston/Gemini/MySQL calls scale to many concurrent users.
 - **Auth** — Spring Security, stateless JWT (HS256). Passwords hashed with BCrypt.
   `JwtAuthFilter` validates the token on every request.
 - **Database** — Spring Data JPA + Hibernate, `ddl-auto=update` creates tables
@@ -102,7 +105,7 @@ curl -X POST localhost:8080/api/compiler/run \
 
 ```
 backend/
-├── pom.xml                          # Maven build (Spring Boot 3.2, Java 17)
+├── pom.xml                          # Maven build (Spring Boot 3.2, Java 21)
 ├── Dockerfile + docker-compose.yml  # backend + MySQL 8
 ├── db/schema.sql                    # MySQL DDL reference
 └── src/main/java/com/prepverse/

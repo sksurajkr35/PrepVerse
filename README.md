@@ -9,7 +9,7 @@ core CS notes, interview prep, AI mentor, leaderboard, analytics and more.
 | Layer      | Technology                                                                 |
 |------------|----------------------------------------------------------------------------|
 | Frontend   | React 19, TypeScript, Vite 6, Tailwind CSS 4 (`prepverse/`)                |
-| Backend    | Java 17, Spring Boot 3, Spring Security (JWT), Spring Data JPA (`backend/`) |
+| Backend    | Java 21, Spring Boot 3, Spring Security (JWT), Spring Data JPA (`backend/`) |
 | Database   | MySQL 8                                                                    |
 | Build      | Maven (backend), npm (frontend)                                            |
 | External   | Piston API (real code execution), Gemini 2.5 Flash (AI mentor)             |
@@ -38,7 +38,7 @@ Open http://localhost:5173, click **Start Preparing Free → Instant Guest Demo 
 
 ### Without Docker
 
-1. Install JDK 17+, Maven 3.8+, MySQL 8, Node.js 18+.
+1. Install JDK 21+, Maven 3.8+, MySQL 8, Node.js 18+.
 2. Start MySQL, then:
    ```bash
    cd backend
