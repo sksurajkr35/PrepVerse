@@ -48,6 +48,7 @@ Leaderboard seed users (`password123`): `aarav@iitd.ac.in`, `ananya@iitb.ac.in`,
 ## API reference
 
 Base URL: `http://localhost:8080`
+Interactive docs (Swagger UI): http://localhost:8080/swagger-ui.html
 
 | Method | Endpoint                | Auth   | Description                                              |
 |--------|-------------------------|--------|----------------------------------------------------------|
@@ -64,24 +65,42 @@ Base URL: `http://localhost:8080`
 | GET    | `/api/test-attempts`    | JWT    | My mock-test attempts                                    |
 | POST   | `/api/test-attempts`    | JWT    | Save a mock-test attempt                                 |
 | GET    | `/api/leaderboard`      | public | Top 20 by PrepVerse score (live from MySQL)              |
-| POST   | `/api/compiler/run`     | public | **Real** code execution (`language`, `code`, `customInput`) |
-| POST   | `/api/ai-mentor`        | public | AI mentor (`prompt`, `history`, `systemInstruction`)     |
+| POST   | `/api/compiler/run`     | JWT    | **Real** code execution (`language`, `code`, `customInput`) |
+| POST   | `/api/ai-mentor`        | JWT    | AI mentor (`prompt`, `history`, `systemInstruction`)     |
 
-JWT usage: `Authorization: Bearer <token>`
+JWT usage: `Authorization: Bearer <token>` (paste it into Swagger's Authorize button too).
 
 ### Example
 
 ```bash
-# Register
-curl -X POST localhost:8080/api/auth/register \
+TOKEN=$(curl -s -X POST localhost:8080/api/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"name":"Test","email":"test@dtu.ac.in","password":"test1234"}'
+  -d '{"email":"demo@prepverse.com","password":"demo1234"}' | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
 
-# Run Python code for real
+# Run Python code for real (authenticated)
 curl -X POST localhost:8080/api/compiler/run \
-  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"language":"python","code":"print(sum([1,2,3,4,5]))"}'
 ```
+
+## Security
+
+- **JWT (HS256)** — stateless auth; passwords hashed with BCrypt. Only
+  `/api/auth/**`, `/api/health`, `/api/leaderboard` and Swagger docs are public.
+- **AI + compiler require login** — these endpoints cost external quota, so
+  anonymous calls get `401`. The React client attaches the JWT automatically
+  and bounces to login when it expires.
+- **Rate limiting** (sliding window, `RateLimitFilter`) — excess calls get `429`:
+
+  | Endpoint            | Limit              | Protects against        |
+  |---------------------|--------------------|-------------------------|
+  | `/api/auth/**`      | 10 req/min per IP  | login brute-forcing     |
+  | `/api/ai-mentor`    | 20 req/min per user| Gemini quota draining   |
+  | `/api/compiler/**`  | 30 req/min per user| Piston abuse            |
+
+- **CORS** — origins configurable via `CORS_ALLOWED_ORIGINS`
+  (default `*` for development; restrict in production).
+- **Validation** — all write endpoints use Bean Validation (`400` with field details).
 
 ## How it works
 
@@ -110,8 +129,8 @@ backend/
 ├── db/schema.sql                    # MySQL DDL reference
 └── src/main/java/com/prepverse/
     ├── PrepverseApplication.java    # entry point
-    ├── config/        # Security, CORS, RestClient
-    ├── security/      # JwtUtil, JwtAuthFilter, UserDetailsService
+    ├── config/        # Security, CORS, RestClient, OpenAPI/Swagger
+    ├── security/      # JwtUtil, JwtAuthFilter, RateLimitFilter, UserDetailsService
     ├── entity/        # User, Submission, TestAttempt (JPA)
     ├── repository/    # Spring Data JPA repositories
     ├── dto/           # Request/response records
@@ -129,4 +148,5 @@ backend/
 | `MYSQL_PASSWORD`                 | `root`                         | MySQL root password            |
 | `GEMINI_API_KEY`                 | _(empty = demo mode)_          | Live AI mentor answers         |
 | `JWT_SECRET`                     | dev secret                     | JWT signing key (min 32 chars) |
+| `CORS_ALLOWED_ORIGINS`           | `*`                            | Comma-separated allowed origins|
 | `app.piston.base-url`            | `https://emkc.org/api/v2/piston` | Code execution API           |

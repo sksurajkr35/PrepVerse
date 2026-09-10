@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Problem, ThemeMode } from '../types';
 import { authService } from '../services/authService';
+import { onUnauthorized } from '../services/api';
 import { storageService } from '../services/storageService';
 import { mockProblems } from '../data/mockData';
 
@@ -67,6 +68,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     authService.fetchMe().then((u) => {
       if (u) setUser(u);
     }).catch(() => {});
+  }, []);
+
+  // Backend rejected our JWT (401 expired/invalid) -> bounce to landing.
+  useEffect(() => {
+    return onUnauthorized(() => {
+      setUser(null);
+      setActiveTab('landing');
+    });
   }, []);
 
   const loginDemoUser = async () => {

@@ -1,3 +1,5 @@
+import { apiFetch } from './api';
+
 export interface ChatMessagePayload {
   role: 'user' | 'ai';
   content: string;
@@ -10,20 +12,16 @@ export const aiService = {
     systemInstruction?: string
   ): Promise<string> {
     try {
-      const res = await fetch('/api/ai-mentor', {
+      const data = await apiFetch<{ response: string }>('/api/ai-mentor', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt, history, systemInstruction })
       });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.response) {
-          return data.response;
-        }
+      if (data && data.response) {
+        return data.response;
       }
     } catch {
-      // Fallback response
+      // Backend down / unreachable -> demo fallback below.
+      // (401 expired-session is handled globally: api.ts auto-logs-out.)
     }
 
     // Default intelligent mentor response fallback

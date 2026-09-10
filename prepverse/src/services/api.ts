@@ -8,6 +8,26 @@
 const API_BASE: string = ((import.meta as any).env?.VITE_API_URL as string) ?? '';
 
 const TOKEN_KEY = 'prepverse_jwt_token';
+// Must match AUTH_STORAGE_KEY in authService.ts (kept here to avoid a cycle).
+const CACHED_USER_KEY = 'prepverse_auth_user';
+
+const UNAUTH_EVENT = 'prepverse:unauthorized';
+
+/** Subscribe to "backend rejected our JWT (401)" events. Returns unsubscribe fn. */
+export function onUnauthorized(callback: () => void): () => void {
+  window.addEventListener(UNAUTH_EVENT, callback);
+  return () => window.removeEventListener(UNAUTH_EVENT, callback);
+}
+
+function handleUnauthorized(): void {
+  setToken(null);
+  try {
+    localStorage.removeItem(CACHED_USER_KEY);
+  } catch {
+    // ignore
+  }
+  window.dispatchEvent(new Event(UNAUTH_EVENT));
+}
 
 export function getToken(): string | null {
   try {
@@ -72,6 +92,10 @@ export async function apiFetch<T>(path: string, options?: ApiOptions): Promise<T
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
 
   if (!res.ok) {
+    if (res.status === 401) {
+      // Expired/invalid JWT -> wipe session so the app bounces to login.
+      handleUnauthorized();
+    }
     let message = `Request failed (${res.status})`;
     try {
       const data = await res.json();
