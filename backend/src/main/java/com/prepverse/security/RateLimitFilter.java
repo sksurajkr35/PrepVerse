@@ -19,7 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *   <li>/api/auth/** - 10 req/min per IP (login brute-force protection)</li>
  *   <li>/api/ai-mentor - 20 req/min per user (Gemini quota protection)</li>
  *   <li>/api/compiler/** - 30 req/min per user (Piston abuse protection)</li>
- *   <li>/api/problems/*/submit - 10 req/min per user (judging runs many Piston calls)</li>
+ *   <li>/api/problems/{id}/submit - 10 req/min per user (judging runs many Piston calls)</li>
  * </ul>
  * Excess requests get HTTP 429 + Retry-After header.
  *
