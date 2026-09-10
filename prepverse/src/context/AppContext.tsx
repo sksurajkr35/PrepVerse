@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Problem, ThemeMode } from '../types';
 import { authService } from '../services/authService';
+import { apiFetch, getToken, onUnauthorized } from '../services/api';
 import { storageService } from '../services/storageService';
 import { mockProblems } from '../data/mockData';
 
@@ -16,7 +17,7 @@ interface AppContextType {
   notifications: string[];
   solvedCount: number;
   prepVerseScore: number;
-  
+
   // Actions
   setUser: (user: User | null) => void;
   setTheme: (theme: ThemeMode) => void;
@@ -27,58 +28,76 @@ interface AppContextType {
   openSubjectDetail: (subjectId: string) => void;
   setSearchQuery: (query: string) => void;
   markProblemSolved: (problemId: string, code: string, language: string) => void;
-  loginWithGoogle: () => Promise<void>;
-  loginDemoUser: () => void;
+  loginDemoUser: () => Promise<void>;
   logout: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+function initialTheme(): ThemeMode {
+  const serverTheme = authService.getCurrentUser()?.theme;
+  if (serverTheme === 'light' || serverTheme === 'dark') {
+    return serverTheme;
+  }
+  const saved = localStorage.getItem('prepverse_theme');
+  return saved === 'light' ? 'light' : 'dark';
+}
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => authService.getCurrentUser());
-  const [theme, setThemeState] = useState<ThemeMode>(() => {
-    const saved = localStorage.getItem('prepverse_theme');
-    return (saved === 'light' || saved === 'dark') ? saved : 'dark';
-  });
+  const [theme, setThemeState] = useState<ThemeMode>(initialTheme);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [currentProblem, setCurrentProblem] = useState<Problem | null>(mockProblems[0]);
   const [activeCompanyId, setActiveCompanyId] = useState<string | null>('comp_amazon');
   const [activeSubjectId, setActiveSubjectId] = useState<string | null>('dbms');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [solvedProblemIds, setSolvedProblemIds] = useState<string[]>(() => storageService.getSolvedProblemIds());
-  
+
+  const streakDays = user?.streakDays ?? 0;
   const notifications = [
-    '🔥 12 Day Streak achieved! Keep grinding!',
+    streakDays > 0
+      ? `🔥 ${streakDays} Day Streak achieved! Keep grinding!`
+      : '🔥 Solve a problem today to start your streak!',
     '🎯 New Mock Test "TCS NQT National Qualifier" is live.',
     '💡 Amazon updated hiring pattern for 2026 Batch.',
     '🏆 You jumped 2 ranks in College Leaderboard!'
   ];
 
+  // Theme: localStorage instantly + document class, MySQL in the background.
   useEffect(() => {
     localStorage.setItem('prepverse_theme', theme);
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    if (getToken()) {
+      apiFetch('/api/users/me', { method: 'PUT', body: JSON.stringify({ theme }) }).catch(() => {});
     }
   }, [theme]);
 
+  // Refresh profile from the Java backend on load (when a JWT exists)
   useEffect(() => {
-    const unsubscribe = authService.subscribeToAuthChanges((u) => {
-      setUser(u);
-    });
-    return () => unsubscribe();
+    authService.fetchMe().then((u) => {
+      if (u) {
+        setUser(u);
+        if (u.theme === 'light' || u.theme === 'dark') {
+          setThemeState(u.theme);
+        }
+      }
+    }).catch(() => {});
   }, []);
 
-  const loginWithGoogle = async () => {
-    const loggedInUser = await authService.loginWithGoogle();
-    setUser(loggedInUser);
-    setActiveTab('dashboard');
-  };
+  // Backend rejected our JWT (401 expired/invalid) -> bounce to landing.
+  useEffect(() => {
+    return onUnauthorized(() => {
+      setUser(null);
+      setActiveTab('landing');
+    });
+  }, []);
 
-  const loginDemoUser = () => {
-    const demoUser = authService.loginDemoUser();
+  const loginDemoUser = async () => {
+    const demoUser = await authService.demoLogin();
     setUser(demoUser);
+    if (demoUser.theme === 'light' || demoUser.theme === 'dark') {
+      setThemeState(demoUser.theme);
+    }
     setActiveTab('dashboard');
   };
 
@@ -171,7 +190,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         openSubjectDetail,
         setSearchQuery,
         markProblemSolved,
-        loginWithGoogle,
         loginDemoUser,
         logout
       }}

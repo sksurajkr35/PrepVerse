@@ -25,6 +25,9 @@ export interface User {
   leetcodeUrl?: string;
   linkedinUrl?: string;
   codechefUrl?: string;
+  /** Solved problem ids (present on profiles returned by the Java backend). */
+  solvedProblemIds?: string[];
+  theme?: ThemeMode;
 }
 
 export type ProblemDifficulty = 'Easy' | 'Medium' | 'Hard';
@@ -225,9 +228,11 @@ export interface Submission {
   problemId: string;
   problemTitle: string;
   language: string;
-  status: 'Accepted' | 'Wrong Answer' | 'Time Limit Exceeded' | 'Compilation Error';
+  status: 'Accepted' | 'Wrong Answer' | 'Time Limit Exceeded' | 'Compilation Error' | 'Runtime Error';
   runtime: string;
   memory: string;
   submittedAt: string;
   code: string;
+  /** Judge summary / failure detail (present on server submissions). */
+  output?: string;
 }

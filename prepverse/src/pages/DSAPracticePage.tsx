@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Filter,
@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { mockProblems } from '../data/mockData';
-import { ProblemDifficulty } from '../types';
+import { problemService } from '../services/problemService';
+import { Problem, ProblemDifficulty } from '../types';
 
 export const DSAPracticePage: React.FC = () => {
   const { openProblemInArena, searchQuery, setSearchQuery } = useApp();
@@ -21,6 +22,12 @@ export const DSAPracticePage: React.FC = () => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedCompany, setSelectedCompany] = useState<string>('All');
+  // Static bank paints instantly; live MySQL rows replace them when the Java backend is up.
+  const [problems, setProblems] = useState<Problem[]>(mockProblems);
+
+  useEffect(() => {
+    problemService.getProblems().then(setProblems).catch(() => {});
+  }, []);
 
   const topicsList = [
     'All', 'Arrays', 'Strings', 'Linked List', 'Stack', 'Queue', 'Hashing',
@@ -29,7 +36,7 @@ export const DSAPracticePage: React.FC = () => {
     'Sliding Window', 'Two Pointers', 'Prefix Sum'
   ];
 
-  const filteredProblems = mockProblems.filter((p) => {
+  const filteredProblems = problems.filter((p) => {
     const matchesSearch =
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||

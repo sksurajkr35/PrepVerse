@@ -1,0 +1,23 @@
+package com.prepverse.config;
+
+import java.time.Duration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.RestClient;
+
+/**
+ * Shared RestClient for outgoing HTTP calls
+ * (Piston code execution API + Gemini AI API).
+ */
+@Configuration
+public class RestClientConfig {
+
+    @Bean
+    public RestClient restClient(RestClient.Builder builder) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(8));
+        factory.setReadTimeout(Duration.ofSeconds(30));
+        return builder.requestFactory(factory).build();
+    }
+}

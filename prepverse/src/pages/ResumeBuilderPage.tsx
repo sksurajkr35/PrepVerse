@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FileText,
   Printer,
@@ -9,12 +9,22 @@ import {
   CheckCircle2,
   ExternalLink
 } from 'lucide-react';
-import { mockResumeData } from '../data/mockData';
 import { ResumeData } from '../types';
+import { userDataService } from '../services/userDataService';
 
 export const ResumeBuilderPage: React.FC = () => {
-  const [resume, setResume] = useState<ResumeData>(mockResumeData);
+  const [resume, setResume] = useState<ResumeData>(() => userDataService.getCachedResume());
   const [aiReviewMsg, setAiReviewMsg] = useState<string | null>(null);
+
+  // Load the saved resume from MySQL (falls back to the cached copy offline).
+  useEffect(() => {
+    userDataService.fetchResume().then(setResume).catch(() => {});
+  }, []);
+
+  // Auto-save every edit (local cache instantly, MySQL debounced).
+  useEffect(() => {
+    userDataService.saveResume(resume);
+  }, [resume]);
 
   const handlePrint = () => {
     window.print();
@@ -41,6 +51,9 @@ export const ResumeBuilderPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1 mr-1">
+            <Save className="w-3.5 h-3.5 text-emerald-400" /> Auto-saved
+          </span>
           <button
             onClick={handleAiReview}
             className="px-4 py-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-semibold flex items-center gap-2"

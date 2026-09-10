@@ -18,9 +18,10 @@ import {
 import confetti from 'canvas-confetti';
 import { useApp } from '../context/AppContext';
 import { compilerService, RunCodeResult } from '../services/compilerService';
+import { storageService } from '../services/storageService';
 
 export const CodeArenaPage: React.FC = () => {
-  const { currentProblem, markProblemSolved } = useApp();
+  const { currentProblem, markProblemSolved, setUser } = useApp();
   const problem = currentProblem || {
     id: 'p1',
     title: 'Two Sum',
@@ -86,7 +87,14 @@ export const CodeArenaPage: React.FC = () => {
     setSubmitting(false);
 
     if (res.status === 'Accepted') {
-      markProblemSolved(problem.id, code, selectedLang);
+      if (res.serverUser) {
+        // Online judged submit: the server already saved the verdict + score.
+        setUser(res.serverUser);
+        storageService.replaceSolvedCache(res.serverUser.solvedProblemIds ?? []);
+      } else {
+        // Offline mock verdict: record locally (syncs to the server later).
+        markProblemSolved(problem.id, code, selectedLang);
+      }
       confetti({
         particleCount: 80,
         spread: 70,
@@ -191,15 +199,15 @@ export const CodeArenaPage: React.FC = () => {
           <div className="p-5 overflow-y-auto space-y-4 custom-scrollbar text-xs leading-relaxed text-slate-300">
             {activeTabLeft === 'description' ? (
               <>
-                <p>{problem.description}</p>
+                <p className="whitespace-pre-wrap">{problem.description}</p>
 
                 {/* Examples */}
                 <div className="space-y-3">
                   <h4 className="font-bold text-white uppercase text-[10px] tracking-wider">Examples</h4>
                   {problem.examples?.map((ex, idx) => (
                     <div key={idx} className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1 font-mono">
-                      <div><span className="text-slate-500">Input:</span> <span className="text-indigo-300">{ex.input}</span></div>
-                      <div><span className="text-slate-500">Output:</span> <span className="text-emerald-400">{ex.output}</span></div>
+                      <div><span className="text-slate-500">Input:</span> <span className="text-indigo-300 whitespace-pre-wrap">{ex.input}</span></div>
+                      <div><span className="text-slate-500">Output:</span> <span className="text-emerald-400 whitespace-pre-wrap">{ex.output}</span></div>
                       {ex.explanation && <div className="text-[11px] text-slate-400 font-sans mt-1">Explanation: {ex.explanation}</div>}
                     </div>
                   ))}

@@ -1,32 +1,42 @@
+import { apiFetch, ApiError, isNetworkError } from './api';
+
 export interface ChatMessagePayload {
   role: 'user' | 'ai';
   content: string;
 }
 
 export const aiService = {
+  /**
+   * Asks the secured Java AI endpoint (JWT attached automatically).
+   * Never throws: rate-limit/backend errors become readable chat messages,
+   * and the demo answer is used ONLY when the backend is unreachable.
+   * (401 expired-session is handled globally: api.ts auto-logs-out.)
+   */
   async askAIMentor(
     prompt: string,
     history?: ChatMessagePayload[],
     systemInstruction?: string
   ): Promise<string> {
     try {
-      const res = await fetch('/api/ai-mentor', {
+      const data = await apiFetch<{ response: string }>('/api/ai-mentor', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt, history, systemInstruction })
       });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.response) {
-          return data.response;
-        }
+      if (data && data.response) {
+        return data.response;
       }
-    } catch {
-      // Fallback response
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 429) {
+        const wait = err.retryAfter ? ` in ~${err.retryAfter}s` : '';
+        return `⏳ Too many AI requests — please wait${wait} and try again.`;
+      }
+      if (!isNetworkError(err)) {
+        return `⚠️ ${err instanceof ApiError ? err.message : 'AI request failed'}`;
+      }
+      // else: backend unreachable -> demo fallback below
     }
 
-    // Default intelligent mentor response fallback
+    // Demo answer (used only when the Java backend is unreachable)
     return `[PrepVerse AI Mentor Response]
 
 Here is a structured explanation for: **"${prompt.slice(0, 60)}..."**
@@ -43,6 +53,6 @@ Here is a structured explanation for: **"${prompt.slice(0, 60)}..."**
 3. **Placement Tip**:
    - Interviewers look closely at how clearly you communicate time complexity ($O(N)$) vs space complexity ($O(1)$) before writing code.
 
-*(Connect your GEMINI_API_KEY in the secrets menu for real-time live Gemini 2.5 AI responses!)*`;
+*(Java backend offline - start it and set GEMINI_API_KEY for live Gemini 2.5 AI responses!)*`;
   }
 };

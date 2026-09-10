@@ -14,11 +14,18 @@ import {
   BarChart2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { mockTestsList } from '../data/mockData';
+import { mockTestsList as mockTestsFallback } from '../data/mockData';
+import { contentService } from '../services/contentService';
 import { MockTest, TestAttemptResult } from '../types';
 import { storageService } from '../services/storageService';
 
 export const MockTestsPage: React.FC = () => {
+  // Bundled bank paints instantly; live MySQL rows replace it when the backend is up.
+  const [mockTestsList, setBank] = useState(mockTestsFallback);
+  useEffect(() => {
+    contentService.getMockTests().then(setBank).catch(() => {});
+  }, []);
+
   const [activeTest, setActiveTest] = useState<MockTest | null>(null);
   const [testActive, setTestActive] = useState<boolean>(false);
   const [currentQIndex, setCurrentQIndex] = useState<number>(0);

@@ -1,116 +1,96 @@
-import { 
-  signInWithPopup, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  User as FirebaseUser
-} from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { auth, googleProvider, db } from './firebase';
 import { User } from '../types';
 import { currentUserMock } from '../data/mockData';
+import { apiFetch, getToken, setToken, setRefreshToken, isNetworkError } from './api';
+import { storageService } from './storageService';
 
 const AUTH_STORAGE_KEY = 'prepverse_auth_user';
 
+interface AuthResponse {
+  token: string;
+  refreshToken?: string;
+  user: User;
+}
+
+function cacheUser(user: User): void {
+  try {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+  } catch {
+    // ignore
+  }
+}
+
+/** Persists a fresh session pair (access + rotating refresh token). */
+function storeSession(data: AuthResponse): void {
+  setToken(data.token);
+  setRefreshToken(data.refreshToken ?? null);
+  cacheUser(data.user);
+}
+
+/** Fields the Java backend accepts on PUT /api/users/me. */
+function editableFields(u: Partial<User>): Record<string, unknown> {
+  return {
+    name: u.name,
+    college: u.college,
+    branch: u.branch,
+    graduationYear: u.graduationYear,
+    targetRole: u.targetRole,
+    preferredLanguage: u.preferredLanguage,
+    avatarUrl: u.avatarUrl,
+    githubUrl: u.githubUrl,
+    leetcodeUrl: u.leetcodeUrl,
+    linkedinUrl: u.linkedinUrl,
+    codechefUrl: u.codechefUrl
+  };
+}
+
 export const authService = {
+  getToken,
+
   getCurrentUser(): User | null {
-    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        // Fallback
+    try {
+      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+      if (stored) {
+        return JSON.parse(stored) as User;
       }
+    } catch {
+      // ignore
     }
     return null;
   },
 
-  loginDemoUser(): User {
-    const demoUser = { ...currentUserMock };
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(demoUser));
-    return demoUser;
+  isLoggedIn(): boolean {
+    return this.getCurrentUser() !== null;
   },
 
-  async getUserFromFirestore(uid: string): Promise<User | null> {
-    try {
-      const userDocRef = doc(db, 'users', uid);
-      const userSnap = await getDoc(userDocRef);
-      if (userSnap.exists()) {
-        return userSnap.data() as User;
-      }
-    } catch (err) {
-      console.warn('Firestore fetch user error:', err);
-    }
-    return null;
-  },
-
-  async saveUserToFirestore(user: User): Promise<void> {
-    try {
-      const userDocRef = doc(db, 'users', user.id);
-      await setDoc(userDocRef, user, { merge: true });
-    } catch (err) {
-      console.warn('Firestore save user error:', err);
-    }
-  },
-
-  async loginWithGoogle(): Promise<User> {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const fbUser = result.user;
-      
-      let existingUser = await this.getUserFromFirestore(fbUser.uid);
-      if (!existingUser) {
-        existingUser = {
-          ...currentUserMock,
-          id: fbUser.uid,
-          name: fbUser.displayName || fbUser.email?.split('@')[0] || 'PrepVerse Developer',
-          email: fbUser.email || 'user@prepverse.com',
-          avatarUrl: fbUser.photoURL || undefined
-        };
-        await this.saveUserToFirestore(existingUser);
-      }
-      
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(existingUser));
-      return existingUser;
-    } catch (error: any) {
-      console.error('Google Auth Error:', error);
-      throw error;
-    }
-  },
-
+  /** Email + password login against the Java backend (JWT + refresh token). */
   async login(email: string, password?: string): Promise<User> {
     try {
-      if (password && password.length >= 6) {
-        const result = await signInWithEmailAndPassword(auth, email, password);
-        const fbUser = result.user;
-        let existingUser = await this.getUserFromFirestore(fbUser.uid);
-        if (!existingUser) {
-          existingUser = {
-            ...currentUserMock,
-            id: fbUser.uid,
-            name: fbUser.displayName || email.split('@')[0],
-            email: email
-          };
-          await this.saveUserToFirestore(existingUser);
-        }
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(existingUser));
-        return existingUser;
-      }
+      const data = await apiFetch<AuthResponse>('/api/auth/login', {
+        method: 'POST',
+        auth: false,
+        body: JSON.stringify({ email, password: password ?? '' })
+      });
+      storeSession(data);
+      await storageService.syncAllFromServer().catch(() => {});
+      return data.user;
     } catch (err) {
-      console.warn('Firebase login failed, using local/demo mode:', err);
+      if (isNetworkError(err)) {
+        // Backend unreachable -> offline demo-mode login (old behavior)
+        const user: User = {
+          ...currentUserMock,
+          email,
+          name: email.split('@')[0] || 'Surya Rastogi'
+        };
+        setToken(null);
+        setRefreshToken(null);
+        cacheUser(user);
+        return user;
+      }
+      throw err;
     }
-
-    // Fallback demo login
-    const user: User = {
-      ...currentUserMock,
-      email,
-      name: email.split('@')[0] || 'Surya Rastogi'
-    };
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-    return user;
   },
 
+  /** Register a new student in MySQL via the Java backend. */
   async signup(signupData: {
     name: string;
     email: string;
@@ -121,80 +101,114 @@ export const authService = {
     preferredLanguage: string;
     password?: string;
   }): Promise<User> {
-    let uid = `usr_${Date.now()}`;
-    
-    if (signupData.password && signupData.password.length >= 6) {
-      try {
-        const res = await createUserWithEmailAndPassword(auth, signupData.email, signupData.password);
-        uid = res.user.uid;
-      } catch (err) {
-        console.warn('Firebase signup failed, proceeding with account creation:', err);
-      }
-    }
-
-    const newUser: User = {
-      ...currentUserMock,
-      id: uid,
-      name: signupData.name,
-      email: signupData.email,
-      college: signupData.college,
-      branch: signupData.branch,
-      graduationYear: signupData.graduationYear,
-      targetRole: signupData.targetRole,
-      preferredLanguage: signupData.preferredLanguage
-    };
-
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(newUser));
-    await this.saveUserToFirestore(newUser);
-    return newUser;
-  },
-
-  async logout(): Promise<void> {
     try {
-      await signOut(auth);
+      const data = await apiFetch<AuthResponse>('/api/auth/register', {
+        method: 'POST',
+        auth: false,
+        body: JSON.stringify(signupData)
+      });
+      storeSession(data);
+      await storageService.syncAllFromServer().catch(() => {});
+      return data.user;
     } catch (err) {
-      console.warn('Firebase signOut error:', err);
+      if (isNetworkError(err)) {
+        // Backend unreachable -> local-only account
+        const user: User = {
+          ...currentUserMock,
+          id: `usr_${Date.now()}`,
+          name: signupData.name,
+          email: signupData.email,
+          college: signupData.college,
+          branch: signupData.branch,
+          graduationYear: signupData.graduationYear,
+          targetRole: signupData.targetRole,
+          preferredLanguage: signupData.preferredLanguage
+        };
+        setToken(null);
+        setRefreshToken(null);
+        cacheUser(user);
+        return user;
+      }
+      throw err;
     }
-    localStorage.removeItem(AUTH_STORAGE_KEY);
   },
 
+  /** One-click demo access (demo@prepverse.com on the backend). */
+  async demoLogin(): Promise<User> {
+    try {
+      const data = await apiFetch<AuthResponse>('/api/auth/demo', {
+        method: 'POST',
+        auth: false
+      });
+      storeSession(data);
+      await storageService.syncAllFromServer().catch(() => {});
+      return data.user;
+    } catch (err) {
+      if (isNetworkError(err)) {
+        const demoUser = { ...currentUserMock };
+        setToken(null);
+        setRefreshToken(null);
+        cacheUser(demoUser);
+        return demoUser;
+      }
+      throw err;
+    }
+  },
+
+  /** Refresh the cached profile from GET /api/users/me (no-op when offline). */
+  async fetchMe(): Promise<User | null> {
+    if (!getToken()) {
+      return this.getCurrentUser();
+    }
+    try {
+      const me = await apiFetch<User>('/api/users/me');
+      cacheUser(me);
+      await storageService.syncAllFromServer().catch(() => {});
+      return me;
+    } catch {
+      return this.getCurrentUser();
+    }
+  },
+
+  /** Update profile locally + on the server (falls back to local-only offline). */
   async updateProfile(updates: Partial<User>): Promise<User> {
     const current = this.getCurrentUser() || currentUserMock;
-    const updated = { ...current, ...updates };
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updated));
-    
-    if (updated.id) {
-      try {
-        const userDocRef = doc(db, 'users', updated.id);
-        await updateDoc(userDocRef, updates);
-      } catch (err) {
-        console.warn('Firestore update profile error:', err);
-      }
+    const updated: User = { ...current, ...updates };
+    cacheUser(updated);
+    if (!getToken()) {
+      return updated;
     }
-    return updated;
+    try {
+      const saved = await apiFetch<User>('/api/users/me', {
+        method: 'PUT',
+        body: JSON.stringify(editableFields(updates))
+      });
+      // Server doesn't store live score fields via this endpoint - keep local computed stats
+      const merged: User = {
+        ...saved,
+        prepVerseScore: updated.prepVerseScore,
+        placementReadiness: updated.placementReadiness,
+        problemsSolved: updated.problemsSolved,
+        xp: updated.xp
+      };
+      cacheUser(merged);
+      return merged;
+    } catch {
+      return updated;
+    }
   },
 
-  subscribeToAuthChanges(callback: (user: User | null) => void) {
-    return onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
-      if (fbUser) {
-        let firestoreUser = await this.getUserFromFirestore(fbUser.uid);
-        if (!firestoreUser) {
-          firestoreUser = {
-            ...currentUserMock,
-            id: fbUser.uid,
-            name: fbUser.displayName || fbUser.email?.split('@')[0] || 'PrepVerse Student',
-            email: fbUser.email || 'user@prepverse.com',
-            avatarUrl: fbUser.photoURL || undefined
-          };
-          await this.saveUserToFirestore(firestoreUser);
-        }
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(firestoreUser));
-        callback(firestoreUser);
-      } else {
-        const local = this.getCurrentUser();
-        callback(local);
-      }
-    });
+  /** Revokes the server session (best-effort) and clears local auth state. */
+  logout(): void {
+    if (getToken()) {
+      apiFetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    }
+    try {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    setToken(null);
+    setRefreshToken(null);
   }
 };
-

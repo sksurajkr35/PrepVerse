@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Building2,
   CheckCircle2,
@@ -12,9 +12,16 @@ import {
   BookOpen
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { mockCompanies } from '../data/mockData';
+import { mockCompanies as mockCompaniesFallback } from '../data/mockData';
+import { contentService } from '../services/contentService';
 
 export const CompaniesPage: React.FC = () => {
+  // Bundled bank paints instantly; live MySQL rows replace it when the backend is up.
+  const [mockCompanies, setBank] = useState(mockCompaniesFallback);
+  useEffect(() => {
+    contentService.getCompanies().then(setBank).catch(() => {});
+  }, []);
+
   const { activeCompanyId, openCompanyDetail, navigate } = useApp();
   const [search, setSearch] = useState('');
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users,
   MessageSquare,
@@ -10,10 +10,17 @@ import {
   X,
   Play
 } from 'lucide-react';
-import { mockInterviewQuestions } from '../data/mockData';
+import { mockInterviewQuestions as mockInterviewFallback } from '../data/mockData';
+import { contentService } from '../services/contentService';
 import { InterviewQuestion } from '../types';
 
 export const InterviewPrepPage: React.FC = () => {
+  // Bundled bank paints instantly; live MySQL rows replace it when the backend is up.
+  const [mockInterviewQuestions, setBank] = useState(mockInterviewFallback);
+  useEffect(() => {
+    contentService.getInterview().then(setBank).catch(() => {});
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'All' | 'Technical' | 'HR' | 'Behavioral' | 'Project'>('All');
   const [selectedQuestion, setSelectedQuestion] = useState<InterviewQuestion | null>(null);
   const [userPracticeText, setUserPracticeText] = useState<string>('');
