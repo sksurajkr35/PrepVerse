@@ -1,5 +1,7 @@
 # PrepVerse — Learn. Practice. Compete. Get Placed.
 
+[![CI](https://github.com/sksurajkr35/PrepVerse/actions/workflows/ci.yml/badge.svg)](https://github.com/sksurajkr35/PrepVerse/actions/workflows/ci.yml)
+
 Full-stack **Java** placement preparation platform for engineering students:
 DSA practice with real code execution, aptitude, mock tests, company kits,
 core CS notes, interview prep, AI mentor, leaderboard, analytics and more.
