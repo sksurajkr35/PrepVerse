@@ -51,10 +51,13 @@ export function setToken(token: string | null): void {
 
 export class ApiError extends Error {
   status: number;
+  /** Seconds to wait before retrying (present on HTTP 429 rate-limit responses). */
+  retryAfter?: number;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, retryAfter?: number) {
     super(message);
     this.status = status;
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -107,7 +110,9 @@ export async function apiFetch<T>(path: string, options?: ApiOptions): Promise<T
     } catch {
       // non-JSON error body - keep default message
     }
-    throw new ApiError(res.status, message);
+    const retryAfterHeader = res.headers.get('Retry-After');
+    const retryAfter = retryAfterHeader ? Number(retryAfterHeader) : undefined;
+    throw new ApiError(res.status, message, retryAfter);
   }
 
   if (res.status === 204) {
