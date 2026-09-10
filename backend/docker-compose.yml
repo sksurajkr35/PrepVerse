@@ -30,5 +30,17 @@ services:
       - mysql
     restart: on-failure
 
+  frontend:
+    build:
+      context: ../prepverse
+      args:
+        VITE_API_URL: ""
+    container_name: prepverse-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: on-failure
+
 volumes:
   prepverse-mysql-data:
