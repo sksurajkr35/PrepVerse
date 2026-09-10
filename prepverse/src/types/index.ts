@@ -27,6 +27,7 @@ export interface User {
   codechefUrl?: string;
   /** Solved problem ids (present on profiles returned by the Java backend). */
   solvedProblemIds?: string[];
+  theme?: ThemeMode;
 }
 
 export type ProblemDifficulty = 'Easy' | 'Medium' | 'Hard';

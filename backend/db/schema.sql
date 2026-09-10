@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS users (
   xp                INT           NOT NULL DEFAULT 0,
   level             INT           NOT NULL DEFAULT 1,
   role              VARCHAR(255)  NOT NULL DEFAULT 'student',
+  theme             VARCHAR(8)    NOT NULL DEFAULT 'dark',
   github_url        VARCHAR(255),
   leetcode_url      VARCHAR(255),
   linkedin_url      VARCHAR(255),
@@ -189,4 +190,25 @@ CREATE TABLE IF NOT EXISTS interview_questions (
   tips            TEXT         NOT NULL,
   difficulty      VARCHAR(255) NOT NULL,
   position        INT          NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS user_activity (
+  user_id       VARCHAR(255) NOT NULL,
+  activity_date DATE         NOT NULL,
+  PRIMARY KEY (user_id, activity_date),
+  CONSTRAINT fk_activity_user FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
+CREATE TABLE IF NOT EXISTS resume_profiles (
+  user_id    VARCHAR(255) NOT NULL PRIMARY KEY,
+  data       TEXT,
+  updated_at DATETIME,
+  CONSTRAINT fk_resume_user FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
+CREATE TABLE IF NOT EXISTS study_plans (
+  user_id    VARCHAR(255) NOT NULL PRIMARY KEY,
+  data       TEXT,
+  updated_at DATETIME,
+  CONSTRAINT fk_plan_user FOREIGN KEY (user_id) REFERENCES users (id)
 );

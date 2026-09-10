@@ -20,10 +20,12 @@ public class SubmissionService {
 
     private final SubmissionRepository submissions;
     private final UserRepository users;
+    private final StreakService streaks;
 
-    public SubmissionService(SubmissionRepository submissions, UserRepository users) {
+    public SubmissionService(SubmissionRepository submissions, UserRepository users, StreakService streaks) {
         this.submissions = submissions;
         this.users = users;
+        this.streaks = streaks;
     }
 
     /** Saves a submission; Accepted ones also count as solved + bump score/XP. */
@@ -46,6 +48,7 @@ public class SubmissionService {
 
         if ("Accepted".equalsIgnoreCase(s.getStatus())) {
             applySolved(userId, req.problemId());
+            streaks.recordActivity(userId);
         }
         return SubmissionDto.fromEntity(s);
     }
@@ -54,6 +57,7 @@ public class SubmissionService {
     @Transactional
     public UserDto markSolved(String userId, MarkSolvedRequest req) {
         User u = applySolved(userId, req.problemId());
+        streaks.recordActivity(userId);
         return UserDto.fromEntity(u);
     }
 

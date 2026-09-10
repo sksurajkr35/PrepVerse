@@ -183,3 +183,15 @@ token (30 days, SHA-256 hash stored in `refresh_tokens`).
 The React client retries once after a silent refresh on 401 and only
 bounces to login when the session is truly dead. No-token 401s never
 wipe local (offline demo) sessions.
+
+## Personal data, streaks & analytics
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET/PUT | `/api/resume` | JWT | Resume builder JSON (204 when never saved, 128 KB cap) |
+| GET/PUT | `/api/study-plan` | JWT | Study-plan config + checklist JSON |
+| GET | `/api/analytics/summary` | JWT | Totals, accuracy, mock average, streak, 14-day activity, topic accuracy |
+
+Streaks are computed from `user_activity` (one row per active day,
+written on Accepted submissions and mock attempts). `PUT /api/users/me`
+also accepts `theme: "dark" | "light"`.

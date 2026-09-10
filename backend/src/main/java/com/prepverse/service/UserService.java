@@ -37,6 +37,7 @@ public class UserService {
         if (req.leetcodeUrl() != null) u.setLeetcodeUrl(req.leetcodeUrl());
         if (req.linkedinUrl() != null) u.setLinkedinUrl(req.linkedinUrl());
         if (req.codechefUrl() != null) u.setCodechefUrl(req.codechefUrl());
+        if ("dark".equals(req.theme()) || "light".equals(req.theme())) u.setTheme(req.theme());
         return UserDto.fromEntity(users.save(u));
     }
 

@@ -18,10 +18,12 @@ public class TestAttemptService {
 
     private final TestAttemptRepository attempts;
     private final UserRepository users;
+    private final StreakService streaks;
 
-    public TestAttemptService(TestAttemptRepository attempts, UserRepository users) {
+    public TestAttemptService(TestAttemptRepository attempts, UserRepository users, StreakService streaks) {
         this.attempts = attempts;
         this.users = users;
+        this.streaks = streaks;
     }
 
     @Transactional
@@ -43,6 +45,7 @@ public class TestAttemptService {
 
         u.setMockTestsTaken(u.getMockTestsTaken() + 1);
         users.save(u);
+        streaks.recordActivity(userId);
         return TestAttemptDto.fromEntity(t);
     }
 

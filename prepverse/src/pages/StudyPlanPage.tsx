@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CalendarCheck,
   CheckSquare,
@@ -9,14 +9,29 @@ import {
   BookOpen,
   ArrowRight
 } from 'lucide-react';
-import { mockStudyPlan } from '../data/mockData';
 import { StudyPlanItem } from '../types';
+import { userDataService } from '../services/userDataService';
 
 export const StudyPlanPage: React.FC = () => {
   const [targetCompany, setTargetCompany] = useState('Amazon');
   const [dailyHours, setDailyHours] = useState('4');
   const [currentLevel, setCurrentLevel] = useState('Intermediate');
-  const [planItems, setPlanItems] = useState<StudyPlanItem[]>(mockStudyPlan);
+  const [planItems, setPlanItems] = useState<StudyPlanItem[]>(() => userDataService.getCachedPlan().items);
+
+  // Load the saved plan from MySQL (falls back to the cached copy offline).
+  useEffect(() => {
+    userDataService.fetchPlan().then((plan) => {
+      setTargetCompany(plan.targetCompany);
+      setDailyHours(plan.dailyHours);
+      setCurrentLevel(plan.currentLevel);
+      setPlanItems(plan.items);
+    }).catch(() => {});
+  }, []);
+
+  // Auto-save config + checklist (local cache instantly, MySQL debounced).
+  useEffect(() => {
+    userDataService.savePlan({ targetCompany, dailyHours, currentLevel, items: planItems });
+  }, [targetCompany, dailyHours, currentLevel, planItems]);
 
   const toggleComplete = (id: string) => {
     setPlanItems(prev =>

@@ -55,6 +55,9 @@ public class User {
     @Column(nullable = false)
     private String role = "student";
 
+    @Column(nullable = false, length = 8)
+    private String theme = "dark";
+
     private String githubUrl;
     private String leetcodeUrl;
     private String linkedinUrl;
@@ -139,6 +142,9 @@ public class User {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getTheme() { return theme; }
+    public void setTheme(String theme) { this.theme = theme; }
 
     public String getGithubUrl() { return githubUrl; }
     public void setGithubUrl(String githubUrl) { this.githubUrl = githubUrl; }

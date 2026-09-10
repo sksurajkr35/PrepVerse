@@ -12,5 +12,6 @@ public record UpdateProfileRequest(
     String githubUrl,
     String leetcodeUrl,
     String linkedinUrl,
-    String codechefUrl
+    String codechefUrl,
+    String theme
 ) {}
