@@ -16,7 +16,7 @@ interface AppContextType {
   notifications: string[];
   solvedCount: number;
   prepVerseScore: number;
-  
+
   // Actions
   setUser: (user: User | null) => void;
   setTheme: (theme: ThemeMode) => void;
@@ -27,8 +27,7 @@ interface AppContextType {
   openSubjectDetail: (subjectId: string) => void;
   setSearchQuery: (query: string) => void;
   markProblemSolved: (problemId: string, code: string, language: string) => void;
-  loginWithGoogle: () => Promise<void>;
-  loginDemoUser: () => void;
+  loginDemoUser: () => Promise<void>;
   logout: () => void;
 }
 
@@ -46,7 +45,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeSubjectId, setActiveSubjectId] = useState<string | null>('dbms');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [solvedProblemIds, setSolvedProblemIds] = useState<string[]>(() => storageService.getSolvedProblemIds());
-  
+
   const notifications = [
     '🔥 12 Day Streak achieved! Keep grinding!',
     '🎯 New Mock Test "TCS NQT National Qualifier" is live.',
@@ -63,21 +62,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [theme]);
 
+  // Refresh profile from the Java backend on load (when a JWT exists)
   useEffect(() => {
-    const unsubscribe = authService.subscribeToAuthChanges((u) => {
-      setUser(u);
-    });
-    return () => unsubscribe();
+    authService.fetchMe().then((u) => {
+      if (u) setUser(u);
+    }).catch(() => {});
   }, []);
 
-  const loginWithGoogle = async () => {
-    const loggedInUser = await authService.loginWithGoogle();
-    setUser(loggedInUser);
-    setActiveTab('dashboard');
-  };
-
-  const loginDemoUser = () => {
-    const demoUser = authService.loginDemoUser();
+  const loginDemoUser = async () => {
+    const demoUser = await authService.demoLogin();
     setUser(demoUser);
     setActiveTab('dashboard');
   };
@@ -171,7 +164,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         openSubjectDetail,
         setSearchQuery,
         markProblemSolved,
-        loginWithGoogle,
         loginDemoUser,
         logout
       }}

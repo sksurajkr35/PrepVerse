@@ -1,0 +1,34 @@
+# One-command full stack backend:  docker compose up --build
+# Backend -> http://localhost:8080   |   MySQL -> localhost:3306 (root / root)
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: prepverse-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: prepverse
+    ports:
+      - "3306:3306"
+    volumes:
+      - prepverse-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    container_name: prepverse-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/prepverse?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      MYSQL_PASSWORD: root
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+    restart: on-failure
+
+volumes:
+  prepverse-mysql-data:

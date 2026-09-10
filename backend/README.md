@@ -1,0 +1,129 @@
+# PrepVerse Backend (Java + Spring Boot + MySQL)
+
+REST API for PrepVerse — placement preparation platform.
+**Java 17 · Spring Boot 3 · Spring Security (JWT) · Spring Data JPA · MySQL 8 · Maven**
+
+## Quick start
+
+### Option A — Docker (easiest, no installs except Docker)
+
+```bash
+cd backend
+docker compose up --build
+```
+
+Backend → http://localhost:8080 · MySQL → localhost:3306 (user `root`, password `root`)
+
+### Option B — Manual
+
+Prerequisites: **JDK 17+**, **Maven 3.8+**, **MySQL 8** running locally.
+
+```bash
+cd backend
+
+# 1. Point to your MySQL (DB auto-created on first run).
+#    Default: root / root @ localhost:3306. Override if needed:
+export MYSQL_PASSWORD=your-mysql-root-password   # Windows: set MYSQL_PASSWORD=...
+
+# 2. (Optional) Live AI answers instead of demo responses:
+export GEMINI_API_KEY=your-gemini-key
+
+# 3. Run
+mvn spring-boot:run
+```
+
+Verify: http://localhost:8080/api/health
+
+## Demo accounts (auto-seeded on first run)
+
+| Email                  | Password    | Notes                                  |
+|------------------------|-------------|----------------------------------------|
+| `demo@prepverse.com`   | `demo1234`  | One-click demo login in the UI         |
+| `surya@dtu.ac.in`      | `password123` | Matches the prefilled login form     |
+| any registered email   | your choice | Register from the UI                   |
+
+Leaderboard seed users (`password123`): `aarav@iitd.ac.in`, `ananya@iitb.ac.in`,
+`rohan@bits.ac.in`, `sneha@dtu.ac.in`, `vikram@nsut.ac.in`.
+
+## API reference
+
+Base URL: `http://localhost:8080`
+
+| Method | Endpoint                | Auth   | Description                                              |
+|--------|-------------------------|--------|----------------------------------------------------------|
+| GET    | `/api/health`           | public | Health check                                             |
+| POST   | `/api/auth/register`    | public | Register student → `{ token, user }`                     |
+| POST   | `/api/auth/login`       | public | Login → `{ token, user }`                                |
+| POST   | `/api/auth/demo`        | public | Demo login → `{ token, user }`                           |
+| GET    | `/api/users/me`         | JWT    | Current profile                                          |
+| PUT    | `/api/users/me`         | JWT    | Update profile                                           |
+| GET    | `/api/problems/solved`  | JWT    | Solved problem ids `string[]`                            |
+| POST   | `/api/problems/solved`  | JWT    | Mark solved (bumps score/XP) → updated user              |
+| GET    | `/api/submissions/mine` | JWT    | My submissions (newest first)                            |
+| POST   | `/api/submissions`      | JWT    | Save a submission                                        |
+| GET    | `/api/test-attempts`    | JWT    | My mock-test attempts                                    |
+| POST   | `/api/test-attempts`    | JWT    | Save a mock-test attempt                                 |
+| GET    | `/api/leaderboard`      | public | Top 20 by PrepVerse score (live from MySQL)              |
+| POST   | `/api/compiler/run`     | public | **Real** code execution (`language`, `code`, `customInput`) |
+| POST   | `/api/ai-mentor`        | public | AI mentor (`prompt`, `history`, `systemInstruction`)     |
+
+JWT usage: `Authorization: Bearer <token>`
+
+### Example
+
+```bash
+# Register
+curl -X POST localhost:8080/api/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Test","email":"test@dtu.ac.in","password":"test1234"}'
+
+# Run Python code for real
+curl -X POST localhost:8080/api/compiler/run \
+  -H 'Content-Type: application/json' \
+  -d '{"language":"python","code":"print(sum([1,2,3,4,5]))"}'
+```
+
+## How it works
+
+- **Auth** — Spring Security, stateless JWT (HS256). Passwords hashed with BCrypt.
+  `JwtAuthFilter` validates the token on every request.
+- **Database** — Spring Data JPA + Hibernate, `ddl-auto=update` creates tables
+  automatically (`users`, `user_solved_problems`, `submissions`,
+  `test_attempts`, `test_attempt_topics`). Reference DDL: `db/schema.sql`.
+- **Code execution** — Real runs via the free [Piston API](https://emkc.org)
+  (no key needed, 20 languages). Falls back to mock simulation if unreachable.
+- **AI Mentor** — Google Gemini 2.5 Flash via REST. Without `GEMINI_API_KEY`
+  it returns structured demo answers.
+- **Content catalogue** (problems, aptitude, companies, notes) is intentionally
+  bundled with the React client as static data — it never lived in the old
+  backend either. All **dynamic/user data** lives in MySQL behind this API.
+
+## Project structure
+
+```
+backend/
+├── pom.xml                          # Maven build (Spring Boot 3.2, Java 17)
+├── Dockerfile + docker-compose.yml  # backend + MySQL 8
+├── db/schema.sql                    # MySQL DDL reference
+└── src/main/java/com/prepverse/
+    ├── PrepverseApplication.java    # entry point
+    ├── config/        # Security, CORS, RestClient
+    ├── security/      # JwtUtil, JwtAuthFilter, UserDetailsService
+    ├── entity/        # User, Submission, TestAttempt (JPA)
+    ├── repository/    # Spring Data JPA repositories
+    ├── dto/           # Request/response records
+    ├── service/       # Business logic (auth, compiler, AI, ...)
+    ├── controller/    # REST endpoints (/api/...)
+    ├── exception/     # Global JSON error handler
+    └── seed/          # Demo + leaderboard seed data
+```
+
+## Configuration
+
+| Variable / property              | Default                        | Purpose                        |
+|----------------------------------|--------------------------------|--------------------------------|
+| `SPRING_DATASOURCE_URL`          | `jdbc:mysql://localhost:3306/prepverse?...` | JDBC URL (docker overrides) |
+| `MYSQL_PASSWORD`                 | `root`                         | MySQL root password            |
+| `GEMINI_API_KEY`                 | _(empty = demo mode)_          | Live AI mentor answers         |
+| `JWT_SECRET`                     | dev secret                     | JWT signing key (min 32 chars) |
+| `app.piston.base-url`            | `https://emkc.org/api/v2/piston` | Code execution API           |

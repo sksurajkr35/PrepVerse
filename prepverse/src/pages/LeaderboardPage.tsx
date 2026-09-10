@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Award, Flame, Search, Sparkles } from 'lucide-react';
 import { mockLeaderboardUsers } from '../data/mockData';
+import { leaderboardService } from '../services/leaderboardService';
+import { LeaderboardUser } from '../types';
 
 export const LeaderboardPage: React.FC = () => {
   const [tab, setTab] = useState<'Global' | 'College' | 'Weekly' | 'Monthly'>('Global');
   const [search, setSearch] = useState('');
+  // Static rows paint instantly; live MySQL rows replace them when the Java backend is up.
+  const [users, setUsers] = useState<LeaderboardUser[]>(mockLeaderboardUsers);
 
-  const filteredUsers = mockLeaderboardUsers.filter(u =>
+  useEffect(() => {
+    leaderboardService.getLeaderboard().then(setUsers).catch(() => {});
+  }, []);
+
+  const myEntry = users.find((u) => u.isCurrentUser);
+
+  const filteredUsers = users.filter(u =>
     u.name.toLowerCase().includes(search.toLowerCase()) ||
     u.college.toLowerCase().includes(search.toLowerCase())
   );
@@ -30,7 +40,7 @@ export const LeaderboardPage: React.FC = () => {
           <Medal className="w-5 h-5 text-amber-400" />
           <div>
             <span className="text-[10px] text-slate-400 block uppercase font-bold">Your Position</span>
-            <span className="text-sm font-black text-white">#14 Rank (Top 2%)</span>
+            <span className="text-sm font-black text-white">{myEntry ? `#${myEntry.rank} Rank` : 'Unranked'}</span>
           </div>
         </div>
       </div>
