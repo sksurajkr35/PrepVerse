@@ -21,6 +21,8 @@ Browser (React :5173) --/api/*--> Spring Boot (:8080) --> MySQL 8 (:3306)
                                          |--> Piston (code run)  |--> Gemini (AI)
 ```
 
+> **Opening this in VS Code?** Start with [VSCODE_SETUP.md](VSCODE_SETUP.md) — extensions, one-click run tasks, troubleshooting.
+
 ## Run the whole project
 
 ### Fastest: backend with Docker + frontend with npm
