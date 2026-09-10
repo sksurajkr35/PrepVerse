@@ -1,0 +1,6 @@
+{
+  "name": "PrepVerse",
+  "description": "Learn. Practice. Compete. Get Placed. Your complete placement preparation universe.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
