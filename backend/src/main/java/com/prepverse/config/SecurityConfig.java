@@ -1,9 +1,5 @@
 package com.prepverse.config;
 
-import com.prepverse.security.CustomUserDetailsService;
-import com.prepverse.security.JwtAuthFilter;
-import com.prepverse.security.JwtUtil;
-import com.prepverse.security.RateLimitFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -15,6 +11,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.prepverse.security.CustomUserDetailsService;
+import com.prepverse.security.JwtAuthFilter;
+import com.prepverse.security.JwtUtil;
+import com.prepverse.security.RateLimitFilter;
 
 /**
  * Stateless JWT security: only auth/health/leaderboard/docs are public,
@@ -28,19 +29,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final JwtAuthFilter jwtAuthFilter;
-    private final RateLimitFilter rateLimitFilter;
-
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter, RateLimitFilter rateLimitFilter) {
-        this.jwtAuthFilter = jwtAuthFilter;
-        this.rateLimitFilter = rateLimitFilter;
-    }
-
     /**
      * Filters are declared as @Beans here (instead of @Component on the filter
      * classes) so each runs only once, inside the Spring Security chain -
      * Spring Boot would otherwise also auto-register them with the servlet
      * container and run them twice per request.
+     *
+     * <p>NOTE: the filters are taken as parameters of filterChain() below,
+     * NOT constructor-injected into this class - this class defines those
+     * @Beans, so constructor injection would be a circular reference and
+     * Spring would fail to boot (BeanCurrentlyInCreationException).
      */
     @Bean
     public JwtAuthFilter jwtAuthFilter(JwtUtil jwtUtil, CustomUserDetailsService userDetailsService) {
@@ -53,7 +51,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(
+        HttpSecurity http,
+        JwtAuthFilter jwtAuthFilter,
+        RateLimitFilter rateLimitFilter
+    ) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .cors(Customizer.withDefaults())
