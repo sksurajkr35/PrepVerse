@@ -29,3 +29,7 @@ prepverse/.env.local
 # Vite
 dist/
 prepverse/dist/
+
+# Packaged source archives (build artifacts, not tracked)
+*.zip
+*.tar.gz
