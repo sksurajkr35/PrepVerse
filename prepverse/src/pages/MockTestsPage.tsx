@@ -2,16 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   FileCheck2,
   Clock,
-  Award,
-  AlertCircle,
   Play,
-  CheckCircle2,
-  XCircle,
-  HelpCircle,
-  ArrowRight,
-  Sparkles,
-  Trophy,
-  BarChart2
+  Trophy
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { mockTestsList as mockTestsFallback } from '../data/mockData';
@@ -33,33 +25,6 @@ export const MockTestsPage: React.FC = () => {
   const [markedForReview, setMarkedForReview] = useState<Record<number, boolean>>({});
   const [timeLeftSeconds, setTimeLeftSeconds] = useState<number>(0);
   const [testResult, setTestResult] = useState<TestAttemptResult | null>(null);
-
-  // Timer countdown
-  useEffect(() => {
-    if (testActive && timeLeftSeconds > 0) {
-      const timer = setInterval(() => {
-        setTimeLeftSeconds((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            handleSubmitTest();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [testActive, timeLeftSeconds]);
-
-  const handleStartTest = (test: MockTest) => {
-    setActiveTest(test);
-    setTestActive(true);
-    setCurrentQIndex(0);
-    setSelectedAnswers({});
-    setMarkedForReview({});
-    setTimeLeftSeconds(test.durationMinutes * 60);
-    setTestResult(null);
-  };
 
   const handleSubmitTest = () => {
     if (!activeTest) return;
@@ -104,6 +69,29 @@ export const MockTestsPage: React.FC = () => {
     confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
   };
 
+  // Timer countdown: safely decrement, triggers submit when time reaches zero
+  useEffect(() => {
+    if (!testActive) return;
+    if (timeLeftSeconds <= 0) {
+      handleSubmitTest();
+      return;
+    }
+    const timer = setInterval(() => {
+      setTimeLeftSeconds(prev => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [testActive, timeLeftSeconds]);
+
+  const handleStartTest = (test: MockTest) => {
+    setActiveTest(test);
+    setTestActive(true);
+    setCurrentQIndex(0);
+    setSelectedAnswers({});
+    setMarkedForReview({});
+    setTimeLeftSeconds(test.durationMinutes * 60);
+    setTestResult(null);
+  };
+
   const formatTimer = (secs: number) => {
     const mins = Math.floor(secs / 60);
     const s = secs % 60;
@@ -115,11 +103,11 @@ export const MockTestsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
-            <FileCheck2 className="w-6 h-6 text-indigo-400" />
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <FileCheck2 className="w-6 h-6 text-teal-600 dark:text-teal-400" />
             <span>Placement Mock Assessments</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1 font-medium">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
             Timed test simulations for TCS, Infosys, Amazon, and General Placement Drives.
           </p>
         </div>
@@ -130,31 +118,31 @@ export const MockTestsPage: React.FC = () => {
         {mockTestsList.map((test) => (
           <div
             key={test.id}
-            className="bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-lg transition-all"
+            className="bg-white/80 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 hover:border-teal-400/50 dark:hover:border-slate-700 rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-sm shadow-sky-950/5 dark:shadow-lg transition-all backdrop-blur-md"
           >
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                <span className="text-[10px] uppercase font-bold text-teal-700 dark:text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
                   {test.type}
                 </span>
-                <span className="text-xs font-semibold text-slate-400 flex items-center gap-1">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" /> {test.durationMinutes} mins
                 </span>
               </div>
 
-              <h3 className="text-base font-bold text-white">{test.title}</h3>
-              <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{test.description}</p>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">{test.title}</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">{test.description}</p>
             </div>
 
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div>
-                <span className="text-[10px] text-slate-500 block">Best Score</span>
-                <span className="text-sm font-bold text-emerald-400">{test.bestScore || 0} / {test.totalMarks}</span>
+                <span className="text-[10px] text-slate-400 block">Best Score</span>
+                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{test.bestScore || 0} / {test.totalMarks}</span>
               </div>
 
               <button
                 onClick={() => handleStartTest(test)}
-                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-2 shadow-md shadow-indigo-600/20 transition-all hover:scale-105"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 via-teal-500 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white text-xs font-semibold flex items-center gap-2 shadow-md shadow-teal-500/20 transition-all hover:scale-105"
               >
                 <Play className="w-3.5 h-3.5 fill-white" />
                 <span>Start Assessment</span>
@@ -166,23 +154,23 @@ export const MockTestsPage: React.FC = () => {
 
       {/* Test Interface Modal */}
       {testActive && activeTest && (
-        <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
+        <div className="fixed inset-0 z-50 bg-slate-900/90 dark:bg-slate-950 flex flex-col backdrop-blur-md">
           {/* Top Bar */}
-          <div className="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between">
+          <div className="bg-white/90 dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-6 py-3 flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-bold text-white">{activeTest.title}</h2>
-              <span className="text-[10px] text-slate-400">Proctored Assessment Mode</span>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">{activeTest.title}</h2>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">Proctored Assessment Mode</span>
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs font-mono font-bold">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-mono font-bold">
                 <Clock className="w-4 h-4 animate-pulse" />
                 <span>{formatTimer(timeLeftSeconds)}</span>
               </div>
 
               <button
                 onClick={handleSubmitTest}
-                className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold"
+                className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-colors"
               >
                 Submit Test
               </button>
@@ -192,22 +180,22 @@ export const MockTestsPage: React.FC = () => {
           {/* Question Workspace */}
           <div className="flex-1 p-6 max-w-4xl mx-auto w-full space-y-6 overflow-y-auto custom-scrollbar">
             {activeTest.questions.length > 0 ? (
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
+              <div className="bg-white/95 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 space-y-5 shadow-lg">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-indigo-400">
+                  <span className="text-xs font-bold text-teal-700 dark:text-teal-400">
                     Question {currentQIndex + 1} of {activeTest.questions.length}
                   </span>
                   <button
                     onClick={() => setMarkedForReview(prev => ({ ...prev, [currentQIndex]: !prev[currentQIndex] }))}
-                    className={`text-xs font-semibold px-3 py-1 rounded-lg border ${
-                      markedForReview[currentQIndex] ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-slate-800 text-slate-400 border-slate-700'
+                    className={`text-xs font-semibold px-3 py-1 rounded-lg border transition-colors ${
+                      markedForReview[currentQIndex] ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                     }`}
                   >
                     {markedForReview[currentQIndex] ? '★ Marked for Review' : '☆ Mark for Review'}
                   </button>
                 </div>
 
-                <p className="text-sm text-white font-medium leading-relaxed">
+                <p className="text-sm text-slate-900 dark:text-white font-medium leading-relaxed">
                   {activeTest.questions[currentQIndex].text}
                 </p>
 
@@ -220,8 +208,8 @@ export const MockTestsPage: React.FC = () => {
                         onClick={() => setSelectedAnswers(prev => ({ ...prev, [currentQIndex]: optIdx }))}
                         className={`w-full p-3.5 rounded-xl text-xs text-left border font-medium transition-all ${
                           selectedAnswers[currentQIndex] === optIdx
-                            ? 'bg-indigo-600/20 border-indigo-500 text-white font-bold'
-                            : 'bg-slate-800/60 border-slate-700/80 text-slate-300 hover:bg-slate-800'
+                            ? 'bg-teal-50 dark:bg-teal-900/30 border-teal-500 text-teal-900 dark:text-white font-bold'
+                            : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                         }`}
                       >
                         {String.fromCharCode(65 + optIdx)}. {opt}
@@ -231,18 +219,18 @@ export const MockTestsPage: React.FC = () => {
                 )}
 
                 {/* Navigation Buttons */}
-                <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                <div className="flex items-center justify-between pt-4 border-t border-slate-200/80 dark:border-slate-800">
                   <button
                     disabled={currentQIndex === 0}
                     onClick={() => setCurrentQIndex(c => c - 1)}
-                    className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold disabled:opacity-40"
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold disabled:opacity-40"
                   >
                     Previous
                   </button>
                   <button
                     disabled={currentQIndex === activeTest.questions.length - 1}
                     onClick={() => setCurrentQIndex(c => c + 1)}
-                    className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold disabled:opacity-40"
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 via-teal-500 to-cyan-600 text-white text-xs font-semibold disabled:opacity-40 shadow-sm"
                   >
                     Next Question
                   </button>
@@ -259,35 +247,35 @@ export const MockTestsPage: React.FC = () => {
 
       {/* Test Report Result Modal */}
       {testResult && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 text-center shadow-2xl animate-in zoom-in-95">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/20">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-white/95 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 space-y-6 text-center shadow-2xl animate-in zoom-in-95">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/20">
               <Trophy className="w-6 h-6" />
             </div>
 
             <div>
-              <h2 className="text-xl font-extrabold text-white">Assessment Completed!</h2>
-              <p className="text-xs text-slate-400 mt-1">Here is your comprehensive performance breakdown.</p>
+              <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Assessment Completed!</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Here is your comprehensive performance breakdown.</p>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                <span className="text-[10px] text-slate-500 block">Score</span>
-                <span className="text-lg font-bold text-white">{testResult.score} / {testResult.totalMarks}</span>
+              <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 block">Score</span>
+                <span className="text-lg font-bold text-slate-900 dark:text-white">{testResult.score} / {testResult.totalMarks}</span>
               </div>
-              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                <span className="text-[10px] text-slate-500 block">Accuracy</span>
-                <span className="text-lg font-bold text-emerald-400">{testResult.accuracy}%</span>
+              <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 block">Accuracy</span>
+                <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{testResult.accuracy}%</span>
               </div>
-              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                <span className="text-[10px] text-slate-500 block">Percentile</span>
-                <span className="text-lg font-bold text-indigo-400">{testResult.percentile}th</span>
+              <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 block">Percentile</span>
+                <span className="text-lg font-bold text-teal-600 dark:text-teal-400">{testResult.percentile}th</span>
               </div>
             </div>
 
             <button
               onClick={() => setTestResult(null)}
-              className="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold"
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 text-white text-xs font-bold shadow-md shadow-teal-500/20"
             >
               Close & Return to Dashboard
             </button>

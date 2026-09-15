@@ -1,1 +1,172 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Custom scrollbars */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.55);
+}
+
+/* Ambient Natural Cool Aurora Backdrop */
+@keyframes cool-float-1 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(45px, -35px) scale(1.08);
+  }
+}
+
+@keyframes cool-float-2 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(-35px, 45px) scale(1.12);
+  }
+}
+
+@keyframes cool-float-3 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(30px, 30px) scale(0.96);
+  }
+}
+
+.animate-cool-float-1 {
+  animation: cool-float-1 18s ease-in-out infinite;
+}
+
+.animate-cool-float-2 {
+  animation: cool-float-2 22s ease-in-out infinite;
+}
+
+.animate-cool-float-3 {
+  animation: cool-float-3 26s ease-in-out infinite;
+}
+
+/* Subtle modern grid pattern for aesthetic tech depth */
+.cool-grid-bg {
+  background-image: radial-gradient(rgba(13, 148, 136, 0.12) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.dark .cool-grid-bg {
+  background-image: radial-gradient(rgba(45, 212, 191, 0.08) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Natural & Modern Aesthetic Light Cool Theme Overrides */
+html:not(.dark) {
+  color-scheme: light;
+}
+
+html:not(.dark) body {
+  background-color: #f8fafc;
+  color: #1e293b;
+}
+
+/* Card & panel surfaces in light mode */
+html:not(.dark) .bg-slate-900,
+html:not(.dark) .bg-slate-900\/90,
+html:not(.dark) .bg-slate-900\/85,
+html:not(.dark) .bg-slate-900\/80,
+html:not(.dark) .bg-slate-900\/60 {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+}
+
+html:not(.dark) .bg-slate-950,
+html:not(.dark) .bg-slate-950\/90,
+html:not(.dark) .bg-slate-950\/80,
+html:not(.dark) .bg-slate-950\/60,
+html:not(.dark) .bg-slate-950\/50,
+html:not(.dark) .bg-slate-950\/40 {
+  background-color: rgba(248, 250, 252, 0.85) !important;
+}
+
+html:not(.dark) .bg-slate-800,
+html:not(.dark) .bg-slate-800\/80,
+html:not(.dark) .bg-slate-800\/60,
+html:not(.dark) .bg-slate-800\/50,
+html:not(.dark) .bg-slate-800\/40 {
+  background-color: rgba(241, 245, 249, 0.9) !important;
+}
+
+/* Crisp natural cool borders in light mode */
+html:not(.dark) .border-slate-800,
+html:not(.dark) .border-slate-800\/80,
+html:not(.dark) .border-slate-800\/60,
+html:not(.dark) .border-slate-700,
+html:not(.dark) .border-slate-700\/80,
+html:not(.dark) .border-slate-700\/60 {
+  border-color: rgba(226, 232, 240, 0.9) !important;
+}
+
+/* High-contrast readable typography in light mode */
+html:not(.dark) h1.text-white,
+html:not(.dark) h2.text-white,
+html:not(.dark) h3.text-white,
+html:not(.dark) h4.text-white,
+html:not(.dark) span.text-white:not([class*="bg-"]),
+html:not(.dark) p.text-white,
+html:not(.dark) div.text-white:not([class*="bg-"]) {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .text-slate-100 {
+  color: #1e293b !important;
+}
+
+html:not(.dark) .text-slate-200 {
+  color: #334155 !important;
+}
+
+html:not(.dark) .text-slate-300 {
+  color: #475569 !important;
+}
+
+html:not(.dark) .text-slate-400 {
+  color: #64748b !important;
+}
+
+/* Form input elements in light mode */
+html:not(.dark) input.bg-slate-800,
+html:not(.dark) select.bg-slate-800,
+html:not(.dark) textarea.bg-slate-800 {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+html:not(.dark) input.bg-slate-800::placeholder,
+html:not(.dark) textarea.bg-slate-800::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Retain white text inside action buttons with filled background */
+button[class*="bg-teal"] *,
+button[class*="bg-indigo"] *,
+button[class*="from-teal"] *,
+button[class*="from-indigo"] *,
+button[class*="bg-rose"] *,
+button[class*="bg-emerald"] *,
+button[class*="bg-teal"],
+button[class*="bg-indigo"],
+button[class*="from-teal"],
+button[class*="from-indigo"],
+button[class*="bg-rose"],
+button[class*="bg-emerald"] {
+  color: #ffffff !important;
+}

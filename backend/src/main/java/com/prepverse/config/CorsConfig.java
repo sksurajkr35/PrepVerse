@@ -1,14 +1,14 @@
 package com.prepverse.config;
 
+import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * CORS: allows the React frontend to call /api/**. Auth uses the
- * Authorization header, not cookies. Restrict origins in production via
- * app.cors.allowed-origins (comma-separated, e.g. https://prepverse.vercel.app).
+ * CORS: allows the React frontend to call /api/**.
+ * Trims whitespace on comma-separated origins.
  */
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
@@ -21,8 +21,13 @@ public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        String[] origins = Arrays.stream(allowedOrigins.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .toArray(String[]::new);
+
         registry.addMapping("/api/**")
-            .allowedOriginPatterns(allowedOrigins.split(","))
+            .allowedOriginPatterns(origins)
             .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
             .allowedHeaders("*")
             .allowCredentials(false)

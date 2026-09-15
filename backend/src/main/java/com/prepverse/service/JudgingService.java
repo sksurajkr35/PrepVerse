@@ -15,9 +15,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Real online-judge engine: runs a submission against every test case
+ * Real online-judge engine: runs a submission against test cases
  * (visible + hidden) via Piston and returns an honest verdict.
  * Hidden test case input/output is NEVER included in the response.
+ * Halts execution immediately upon encountering a failed test case to optimize resources.
  */
 @Service
 public class JudgingService {
@@ -96,9 +97,10 @@ public class JudgingService {
             }
             if (sameOutput(exec.stdout(), tc.getExpectedOutput())) {
                 passed++;
-            } else if (firstFailed == null) {
+            } else {
                 firstFailed = tc;
                 firstActual = exec.stdout();
+                break; // Stop immediately on Wrong Answer! Saves huge latency & external quota
             }
         }
 

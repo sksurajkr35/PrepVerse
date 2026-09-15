@@ -6,6 +6,7 @@ import com.prepverse.dto.SubmissionRequest;
 import com.prepverse.dto.UserDto;
 import com.prepverse.entity.Submission;
 import com.prepverse.entity.User;
+import com.prepverse.repository.ProblemRepository;
 import com.prepverse.repository.SubmissionRepository;
 import com.prepverse.repository.UserRepository;
 import java.util.List;
@@ -20,11 +21,16 @@ public class SubmissionService {
 
     private final SubmissionRepository submissions;
     private final UserRepository users;
+    private final ProblemRepository problems;
     private final StreakService streaks;
 
-    public SubmissionService(SubmissionRepository submissions, UserRepository users, StreakService streaks) {
+    public SubmissionService(SubmissionRepository submissions,
+                             UserRepository users,
+                             ProblemRepository problems,
+                             StreakService streaks) {
         this.submissions = submissions;
         this.users = users;
+        this.problems = problems;
         this.streaks = streaks;
     }
 
@@ -33,6 +39,11 @@ public class SubmissionService {
     public SubmissionDto create(String userId, SubmissionRequest req) {
         users.findById(userId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (!problems.existsById(req.problemId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Problem not found: " + req.problemId());
+        }
+
         Submission s = new Submission();
         s.setId("sub_" + UUID.randomUUID().toString().substring(0, 8));
         s.setUserId(userId);
@@ -56,6 +67,9 @@ public class SubmissionService {
     /** Marks a problem solved and updates score / XP / readiness. */
     @Transactional
     public UserDto markSolved(String userId, MarkSolvedRequest req) {
+        if (!problems.existsById(req.problemId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Problem not found: " + req.problemId());
+        }
         User u = applySolved(userId, req.problemId());
         streaks.recordActivity(userId);
         return UserDto.fromEntity(u);

@@ -3,11 +3,7 @@ import {
   FileText,
   Printer,
   Save,
-  Sparkles,
-  Plus,
-  Trash2,
-  CheckCircle2,
-  ExternalLink
+  Sparkles
 } from 'lucide-react';
 import { ResumeData } from '../types';
 import { userDataService } from '../services/userDataService';
@@ -38,33 +34,33 @@ export const ResumeBuilderPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header - Hidden on Print */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
         <div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
-            <FileText className="w-6 h-6 text-indigo-400" />
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <FileText className="w-6 h-6 text-teal-600 dark:text-teal-400" />
             <span>Interactive ATS Resume Builder</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1 font-medium">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
             Generate clean, ATS-formatted resume templates tailored for tech placements.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1 mr-1">
-            <Save className="w-3.5 h-3.5 text-emerald-400" /> Auto-saved
+          <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1 mr-1">
+            <Save className="w-3.5 h-3.5 text-emerald-500" /> Auto-saved
           </span>
           <button
             onClick={handleAiReview}
-            className="px-4 py-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-semibold flex items-center gap-2"
+            className="px-4 py-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/30 text-xs font-semibold flex items-center gap-2 transition-colors"
           >
-            <Sparkles className="w-4 h-4 text-indigo-400" />
+            <Sparkles className="w-4 h-4 text-teal-600 dark:text-teal-400" />
             <span>AI Resume Review</span>
           </button>
 
           <button
             onClick={handlePrint}
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-2 shadow-md shadow-indigo-600/20"
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 via-teal-500 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white text-xs font-semibold flex items-center gap-2 shadow-md shadow-teal-500/20 transition-all hover:scale-[1.02]"
           >
             <Printer className="w-4 h-4" />
             <span>Print / Save PDF</span>
@@ -72,70 +68,70 @@ export const ResumeBuilderPage: React.FC = () => {
         </div>
       </div>
 
-      {/* AI Feedback Banner */}
+      {/* AI Feedback Banner - Hidden on Print */}
       {aiReviewMsg && (
-        <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-2xl text-xs text-indigo-200 space-y-1">
+        <div className="bg-teal-500/10 border border-teal-500/25 p-4 rounded-2xl text-xs text-teal-900 dark:text-teal-200 space-y-1 print:hidden">
           <p className="whitespace-pre-wrap leading-relaxed">{aiReviewMsg}</p>
         </div>
       )}
 
       {/* 2-Column Split: Form Editor vs Live Printable Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Editor Inputs */}
-        <div className="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-5">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider text-indigo-400">Personal & Contact Info</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 print:block">
+        {/* Left: Editor Inputs - Hidden on Print */}
+        <div className="lg:col-span-6 bg-white/80 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 space-y-5 shadow-sm shadow-sky-950/5 dark:shadow-xl print:hidden backdrop-blur-md">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400">Personal & Contact Info</h3>
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div>
-              <label className="text-slate-400 block mb-1">Full Name</label>
+              <label className="text-slate-600 dark:text-slate-400 block mb-1">Full Name</label>
               <input
                 type="text"
                 value={resume.personalInfo.fullName}
                 onChange={(e) => setResume({ ...resume, personalInfo: { ...resume.personalInfo, fullName: e.target.value } })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white"
               />
             </div>
             <div>
-              <label className="text-slate-400 block mb-1">Email</label>
+              <label className="text-slate-600 dark:text-slate-400 block mb-1">Email</label>
               <input
                 type="email"
                 value={resume.personalInfo.email}
                 onChange={(e) => setResume({ ...resume, personalInfo: { ...resume.personalInfo, email: e.target.value } })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white"
               />
             </div>
             <div>
-              <label className="text-slate-400 block mb-1">Phone</label>
+              <label className="text-slate-600 dark:text-slate-400 block mb-1">Phone</label>
               <input
                 type="text"
                 value={resume.personalInfo.phone}
                 onChange={(e) => setResume({ ...resume, personalInfo: { ...resume.personalInfo, phone: e.target.value } })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white"
               />
             </div>
             <div>
-              <label className="text-slate-400 block mb-1">Location</label>
+              <label className="text-slate-600 dark:text-slate-400 block mb-1">Location</label>
               <input
                 type="text"
                 value={resume.personalInfo.location}
                 onChange={(e) => setResume({ ...resume, personalInfo: { ...resume.personalInfo, location: e.target.value } })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-xs text-slate-400 block mb-1">Professional Summary</label>
+            <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Professional Summary</label>
             <textarea
               value={resume.personalInfo.summary}
               onChange={(e) => setResume({ ...resume, personalInfo: { ...resume.personalInfo, summary: e.target.value } })}
               rows={3}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white"
             />
           </div>
 
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider text-indigo-400 pt-2 border-t border-slate-800">Projects</h3>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400 pt-2 border-t border-slate-200/80 dark:border-slate-800">Projects</h3>
           {resume.projects.map((proj, idx) => (
-            <div key={proj.id} className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2 text-xs">
+            <div key={proj.id} className="bg-slate-50/80 dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 space-y-2 text-xs">
               <input
                 type="text"
                 value={proj.title}
@@ -144,7 +140,7 @@ export const ResumeBuilderPage: React.FC = () => {
                   newProjs[idx].title = e.target.value;
                   setResume({ ...resume, projects: newProjs });
                 }}
-                className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white font-bold"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
               />
               <input
                 type="text"
@@ -154,14 +150,14 @@ export const ResumeBuilderPage: React.FC = () => {
                   newProjs[idx].techStack = e.target.value;
                   setResume({ ...resume, projects: newProjs });
                 }}
-                className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-300"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-700 dark:text-slate-300"
               />
             </div>
           ))}
         </div>
 
         {/* Right: Live A4 Template Preview (Print Friendly) */}
-        <div className="lg:col-span-6 bg-white text-slate-900 p-8 rounded-2xl shadow-2xl space-y-4 print:p-0 font-sans text-xs min-h-[600px]">
+        <div className="lg:col-span-6 bg-white text-slate-900 p-8 rounded-2xl shadow-sm border border-slate-200/80 space-y-4 print:p-0 print:border-none print:shadow-none print:w-full font-sans text-xs min-h-[600px]">
           {/* Resume Header */}
           <div className="border-b border-slate-300 pb-3 text-center space-y-1">
             <h2 className="text-xl font-bold uppercase tracking-tight text-slate-900">{resume.personalInfo.fullName}</h2>
@@ -170,7 +166,7 @@ export const ResumeBuilderPage: React.FC = () => {
               <span>{resume.personalInfo.phone}</span> &bull;
               <span>{resume.personalInfo.location}</span>
             </div>
-            <div className="text-[10px] text-indigo-700 flex items-center justify-center gap-3 font-semibold pt-0.5">
+            <div className="text-[10px] text-teal-700 flex items-center justify-center gap-3 font-semibold pt-0.5">
               <span>{resume.personalInfo.github}</span>
               <span>{resume.personalInfo.linkedin}</span>
             </div>
