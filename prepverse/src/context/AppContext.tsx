@@ -40,7 +40,7 @@ function initialTheme(): ThemeMode {
     return serverTheme;
   }
   const saved = localStorage.getItem('prepverse_theme');
-  return saved === 'light' ? 'light' : 'dark';
+  return saved === 'dark' ? 'dark' : 'light';
 }
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { Sidebar } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
 import { AuthModal } from './components/AuthModal';
+import { CoolBackdrop } from './components/CoolBackdrop';
 
 // Pages
 import { LandingPage } from './pages/LandingPage';
@@ -29,8 +30,11 @@ const AppContent: React.FC = () => {
 
   if (activeTab === 'landing' || !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
-        <LandingPage />
+      <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans selection:bg-teal-500 selection:text-white transition-colors duration-200">
+        <CoolBackdrop />
+        <div className="relative z-10">
+          <LandingPage />
+        </div>
       </div>
     );
   }
@@ -76,18 +80,22 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased flex flex-col selection:bg-indigo-500 selection:text-white">
-      {/* Top Navigation Navbar */}
-      <Navbar onMenuClick={() => setSidebarOpen(true)} />
+    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased flex flex-col selection:bg-teal-500 selection:text-white transition-colors duration-200">
+      <CoolBackdrop />
 
-      <div className="flex-1 flex overflow-hidden max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 gap-6 relative">
-        {/* Sidebar Navigation */}
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="relative z-10 flex flex-col min-h-screen">
+        {/* Top Navigation Navbar */}
+        <Navbar onMenuClick={() => setSidebarOpen(true)} />
 
-        {/* Main Content Viewport */}
-        <main className="flex-1 min-w-0 overflow-y-auto pr-1 custom-scrollbar pb-12">
-          {renderActivePage()}
-        </main>
+        <div className="flex-1 flex overflow-hidden max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 gap-6 relative">
+          {/* Sidebar Navigation */}
+          <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+          {/* Main Content Viewport */}
+          <main className="flex-1 min-w-0 overflow-y-auto pr-1 custom-scrollbar pb-12">
+            {renderActivePage()}
+          </main>
+        </div>
       </div>
     </div>
   );
