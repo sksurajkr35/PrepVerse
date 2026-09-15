@@ -85,14 +85,18 @@ const AppContent: React.FC = () => {
 
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Top Navigation Navbar */}
-        <Navbar onMenuClick={() => setSidebarOpen(true)} />
+        <div className="print:hidden">
+          <Navbar onMenuClick={() => setSidebarOpen(true)} />
+        </div>
 
-        <div className="flex-1 flex overflow-hidden max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 gap-6 relative">
+        <div className="flex-1 flex overflow-hidden max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 gap-6 relative print:p-0 print:max-w-none">
           {/* Sidebar Navigation */}
-          <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          <div className="print:hidden shrink-0">
+            <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          </div>
 
           {/* Main Content Viewport */}
-          <main className="flex-1 min-w-0 overflow-y-auto pr-1 custom-scrollbar pb-12">
+          <main className="flex-1 min-w-0 overflow-y-auto pr-1 custom-scrollbar pb-12 print:overflow-visible print:p-0">
             {renderActivePage()}
           </main>
         </div>

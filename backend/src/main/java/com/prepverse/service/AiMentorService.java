@@ -13,7 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 /**
- * AI Mentor backed by the Gemini REST API (same model/prompting as before).
+ * AI Mentor backed by the Gemini REST API.
+ * Uses x-goog-api-key header for authentication (never URL parameters).
  * Returns structured demo answers when no API key is configured.
  */
 @Service
@@ -56,15 +57,20 @@ public class AiMentorService {
             contents.add(Map.of("role", "user",
                 "parts", List.of(Map.of("text", req.prompt()))));
 
-            String sys = (req.systemInstruction() == null || req.systemInstruction().isBlank())
-                ? DEFAULT_SYSTEM : req.systemInstruction();
+            // Enforce system instruction with strict server boundaries
+            String sys = DEFAULT_SYSTEM;
+            if (req.systemInstruction() != null && !req.systemInstruction().isBlank()) {
+                sys += "\nAdditional student context: " + req.systemInstruction().trim();
+            }
+
             Map<String, Object> body = new HashMap<>();
             body.put("contents", contents);
             body.put("system_instruction", Map.of("parts", List.of(Map.of("text", sys))));
 
+            // Pass key in header (x-goog-api-key) rather than URL query parameter
             Map<String, Object> res = restClient.post()
-                .uri("https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}",
-                    model, apiKey)
+                .uri("https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent", model)
+                .header("x-goog-api-key", apiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
                 .retrieve()
@@ -77,8 +83,9 @@ public class AiMentorService {
             return text;
         } catch (Exception e) {
             log.warn("Gemini call failed: {}", e.getMessage());
+            // Sanitize response to prevent leaking internal stack traces or endpoint details
             return demoResponse(req.prompt())
-                + "\n\n*(Live AI unavailable right now: " + e.getMessage() + ")*";
+                + "\n\n*(Note: Live AI service is currently unavailable. Displaying offline demo response.)*";
         }
     }
 

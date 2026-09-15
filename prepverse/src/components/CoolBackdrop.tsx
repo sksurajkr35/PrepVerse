@@ -2,7 +2,7 @@ import React from 'react';
 
 export const CoolBackdrop: React.FC = () => {
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 print:hidden" aria-hidden="true">
       {/* Subtle modern grid pattern for aesthetic depth */}
       <div className="absolute inset-0 cool-grid-bg opacity-60" />
 

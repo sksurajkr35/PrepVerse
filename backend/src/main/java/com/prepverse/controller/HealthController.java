@@ -16,8 +16,7 @@ public class HealthController {
         return ResponseEntity.ok(Map.of(
             "status", "ok",
             "timestamp", Instant.now().toString(),
-            "service", "prepverse-java-backend",
-            "java", System.getProperty("java.version")
+            "service", "prepverse-backend"
         ));
     }
 }

@@ -26,19 +26,31 @@ public class UserService {
     @Transactional
     public UserDto updateProfile(String userId, UpdateProfileRequest req) {
         User u = require(userId);
-        if (req.name() != null) u.setName(req.name());
-        if (req.college() != null) u.setCollege(req.college());
-        if (req.branch() != null) u.setBranch(req.branch());
+        if (req.name() != null && !req.name().isBlank()) u.setName(req.name().trim());
+        if (req.college() != null) u.setCollege(req.college().trim());
+        if (req.branch() != null) u.setBranch(req.branch().trim());
         if (req.graduationYear() != null) u.setGraduationYear(req.graduationYear());
-        if (req.targetRole() != null) u.setTargetRole(req.targetRole());
-        if (req.preferredLanguage() != null) u.setPreferredLanguage(req.preferredLanguage());
-        if (req.avatarUrl() != null) u.setAvatarUrl(req.avatarUrl());
-        if (req.githubUrl() != null) u.setGithubUrl(req.githubUrl());
-        if (req.leetcodeUrl() != null) u.setLeetcodeUrl(req.leetcodeUrl());
-        if (req.linkedinUrl() != null) u.setLinkedinUrl(req.linkedinUrl());
-        if (req.codechefUrl() != null) u.setCodechefUrl(req.codechefUrl());
+        if (req.targetRole() != null) u.setTargetRole(req.targetRole().trim());
+        if (req.preferredLanguage() != null) u.setPreferredLanguage(req.preferredLanguage().trim());
+        if (req.avatarUrl() != null) u.setAvatarUrl(sanitizeUrl(req.avatarUrl()));
+        if (req.githubUrl() != null) u.setGithubUrl(sanitizeUrl(req.githubUrl()));
+        if (req.leetcodeUrl() != null) u.setLeetcodeUrl(sanitizeUrl(req.leetcodeUrl()));
+        if (req.linkedinUrl() != null) u.setLinkedinUrl(sanitizeUrl(req.linkedinUrl()));
+        if (req.codechefUrl() != null) u.setCodechefUrl(sanitizeUrl(req.codechefUrl()));
         if ("dark".equals(req.theme()) || "light".equals(req.theme())) u.setTheme(req.theme());
         return UserDto.fromEntity(users.save(u));
+    }
+
+    /** Strict URL sanitization to prevent Stored XSS (javascript: or data: schemes). */
+    private static String sanitizeUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return "";
+        }
+        String trimmed = url.trim();
+        if (trimmed.startsWith("https://") || trimmed.startsWith("http://")) {
+            return trimmed;
+        }
+        return "";
     }
 
     private User require(String userId) {
